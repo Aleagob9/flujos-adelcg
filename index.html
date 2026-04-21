@@ -468,6 +468,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
     <div style="display:flex;gap:6px;">
       <div class="user-btn active" onclick="setUser('Alejandro',this)" style="flex:1;text-align:center;padding:7px 0;border-radius:8px;font-size:12px;">👨 Alejandro</div>
       <div class="user-btn" onclick="setUser('Sofi',this)" style="flex:1;text-align:center;padding:7px 0;border-radius:8px;font-size:12px;">👩 Sofi</div>
+      <div class="user-btn" onclick="setUser('Cartonomico',this)" style="flex:1;text-align:center;padding:7px 0;border-radius:8px;font-size:12px;margin-top:6px;">🏢 Cartonómico</div>
     </div>
   </div>
 </div>
@@ -486,6 +487,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
     <div class="user-toggle">
       <div class="user-btn active" onclick="setUser('Alejandro',this)">👨 Alejandro</div>
       <div class="user-btn" onclick="setUser('Sofi',this)">👩 Sofi</div>
+      <div class="user-btn" onclick="setUser('Cartonomico',this)">🏢 Carto</div>
     </div>
   </div>
 
@@ -573,6 +575,8 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
       <div class="type-tab gas active" onclick="setType('GASTO',this)">↓ Gasto</div>
       <div class="type-tab ing" onclick="setType('INGRESO',this)">↑ Ingreso</div>
       <div class="type-tab tra" onclick="setType('TRANSFERENCIA',this)">⇄ Transfer</div>
+      <div class="type-tab ext-in" onclick="setType('ENTRADA EXTERNA',this)" style="background:var(--bg3);color:#a78bfa;border:0.5px solid rgba(167,139,250,0.3);border-radius:8px;padding:10px 0;text-align:center;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;">⬇ De Fuera</div>
+      <div class="type-tab ext-out" onclick="setType('SALIDA EXTERNA',this)" style="background:var(--bg3);color:#fb923c;border:0.5px solid rgba(251,146,60,0.3);border-radius:8px;padding:10px 0;text-align:center;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;">⬆ Hacia Afuera</div>
     </div>
     <div class="field">
       <div class="field-label">Monto</div>
@@ -658,11 +662,14 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
     <div class="filter-pill" data-filter="GASTO" onclick="setFilter('GASTO',this)">Gastos</div>
     <div class="filter-pill" data-filter="INGRESO" onclick="setFilter('INGRESO',this)">Ingresos</div>
     <div class="filter-pill" data-filter="TRANSFERENCIA" onclick="setFilter('TRANSFERENCIA',this)">Transferencias</div>
+    <div class="filter-pill" data-filter="ENTRADA EXTERNA" onclick="setFilter('ENTRADA EXTERNA',this)">De Fuera</div>
+    <div class="filter-pill" data-filter="SALIDA EXTERNA" onclick="setFilter('SALIDA EXTERNA',this)">Hacia Afuera</div>
   </div>
   <div class="filter-row" style="padding-top:0;">
     <div class="filter-pill active" data-user="todos" onclick="setUserFilter('todos',this)">👥 Todos</div>
     <div class="filter-pill" data-user="Alejandro" onclick="setUserFilter('Alejandro',this)">👨 Alejandro</div>
     <div class="filter-pill" data-user="Sofi" onclick="setUserFilter('Sofi',this)">👩 Sofi</div>
+    <div class="filter-pill" data-user="Cartonomico" onclick="setUserFilter('Cartonomico',this)">🏢 Cartonómico</div>
   </div>
   <div class="records-list" id="records-list"></div>
 </div>
@@ -930,12 +937,13 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwH2o22keM4pyDs-gXNfWc5_sN4FIPAJS297cO2eAXlTGuNwFxytOMsG93MvwDpf8Fc/exec';
 
 const CARTERAS_CASH = ['BANAMEX DEBITO','BAJIO DEBITO','FACIL','EFECTIVO','BBVA DEBITO','EFECTIVO SOFI'];
-const CARTERAS_TDC  = ['T. COSTCO','T. PLATINUM','AMEX','T. BBVA','T. INVEX','T. PALACIO'];
+const CARTERAS_EMPRESA = ['T. CARTONOMICO']; // Excluidas del dashboard personal
+const CARTERAS_TDC  = ['T. COSTCO','T. PLATINUM','AMEX','T. BBVA','T. INVEX','T. PALACIO','T. CARTONOMICO'];
 const CARTERAS = [...CARTERAS_CASH,...CARTERAS_TDC];
 
 // Fecha de corte: último día del ciclo que entra al pago del 24 del MISMO mes
 // Si operación > diaCorte → pago el 24 del mes SIGUIENTE
-const TDC_CORTE = {'T. COSTCO':25,'T. PLATINUM':12,'AMEX':11,'T. BBVA':6,'T. INVEX':26,'T. PALACIO':26};
+const TDC_CORTE = {'T. COSTCO':25,'T. PLATINUM':12,'AMEX':11,'T. BBVA':6,'T. INVEX':26,'T. PALACIO':26,'T. CARTONOMICO':26};
 const DIA_PAGO = 24;
 
 const CAT_GASTO   = ['RENTA','LUZ','AGUA','GAS','INTERNET','GASOLINA RAV4','GASOLINA JAC','CELULAR','COMIDA','SUSCRIPCIONES','SEGUROS','SALUD-FARMACIA-CONSULTAS MEDICAS','MUCHACHA','SUPER','TRANSPORTE','VEHICULO','ROPA Y ACCESORIOS','TINTORERIA Y RENTA VESTUARIO','REGALOS','ESTACIONAMIENTO','VIAJE','COMISIONES-FINANCIEROS','MEJORAS CASA','ENTRETENIMIENTO','BELLEZA Y SPA','CREDITO AAC','PROPINAS','EDUCACION','PAGO A DEUDA','OTROS','MESES SIN INTERESES'];
@@ -1007,19 +1015,21 @@ function setType(t, el) {
   document.querySelectorAll('.type-tab').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   selectedCategoria = ''; selectedCarteraDest = ''; selectedCartera = '';
-  document.getElementById('field-cartera-dest').style.display = t === 'TRANSFERENCIA' ? 'block' : 'none';
-  document.getElementById('field-categoria').style.display = t === 'TRANSFERENCIA' ? 'none' : 'block';
-  document.getElementById('label-cartera').textContent = t === 'TRANSFERENCIA' ? 'Cartera origen' : 'Cartera';
+  const isTransferType = t === 'TRANSFERENCIA';
+  const isExternalType = t === 'ENTRADA EXTERNA' || t === 'SALIDA EXTERNA';
+  document.getElementById('field-cartera-dest').style.display = isTransferType ? 'block' : 'none';
+  document.getElementById('field-categoria').style.display = (isTransferType || isExternalType) ? 'none' : 'block';
+  document.getElementById('label-cartera').textContent = isTransferType ? 'Cartera origen' : 'Cartera';
   renderChipsCartera(); renderChipsCategoria(); renderChipsCarteraDest();
 }
 
 // CHIPS
 function renderChipsCartera() {
   const wrap = document.getElementById('chips-cartera'); wrap.innerHTML = '';
-  const list = currentType === 'INGRESO' ? CARTERAS_CASH : CARTERAS;
+  const list = (currentType === 'INGRESO' || currentType === 'ENTRADA EXTERNA') ? CARTERAS_CASH : CARTERAS;
   list.forEach(c => {
     const isTdc = CARTERAS_TDC.includes(c);
-    const colorCls = currentType === 'INGRESO' ? ' ing' : currentType === 'GASTO' ? ' gas' : ' tra';
+    const colorCls = (currentType === 'INGRESO' || currentType === 'ENTRADA EXTERNA') ? ' ing' : currentType === 'GASTO' ? ' gas' : ' tra';
     const el = document.createElement('div');
     el.className = 'chip' + (selectedCartera === c ? ' active' + colorCls : '');
     el.textContent = (isTdc ? '💳 ' : '') + c;
@@ -1090,8 +1100,10 @@ function guardarRegistro() {
   if (!monto || monto <= 0)  return showToast('Ingresa un monto válido', 'error');
   if (!fecha)                return showToast('Selecciona una fecha', 'error');
   if (!selectedCartera)      return showToast('Selecciona una cartera', 'error');
-  if (currentType !== 'TRANSFERENCIA' && !selectedCategoria) return showToast('Selecciona una categoría', 'error');
+  const noNeedsCat = currentType === 'TRANSFERENCIA' || currentType === 'ENTRADA EXTERNA' || currentType === 'SALIDA EXTERNA';
+  if (!noNeedsCat && !selectedCategoria) return showToast('Selecciona una categoría', 'error');
   if (currentType === 'TRANSFERENCIA' && !selectedCarteraDest) return showToast('Selecciona cartera destino', 'error');
+  if ((currentType === 'ENTRADA EXTERNA' || currentType === 'SALIDA EXTERNA') && !selectedCartera) return showToast('Selecciona una cartera', 'error');
 
   const btn = document.getElementById('btn-guardar');
   btn.classList.add('loading'); btn.textContent = 'Guardando...';
@@ -1107,6 +1119,10 @@ function buildRegistros(monto, fecha, nota, tipo, cartera, carteraDest, categori
     const idT = generateId();
     regs.push({ id: generateId(), fecha, hora: getHora(), cartera, tipo: 'TRANSFERENCIA', categoria: '', monto: -Math.abs(monto), nota, fechaFlujo: calcFechaFlujo(fecha, cartera), usuario: currentUser, carteraDestino: carteraDest, idTransferencia: idT, montoTransferencia: monto });
     regs.push({ id: generateId(), fecha, hora: getHora(), cartera: carteraDest, tipo: 'INGRESO POR TRANSFERENCIA', categoria: '', monto: Math.abs(monto), nota, fechaFlujo: calcFechaFlujo(fecha, carteraDest), usuario: currentUser, carteraDestino: '', idTransferencia: idT, montoTransferencia: monto });
+  } else if (tipo === 'ENTRADA EXTERNA') {
+    regs.push({ id: generateId(), fecha, hora: getHora(), cartera, tipo: 'ENTRADA EXTERNA', categoria: '', monto: Math.abs(monto), nota, fechaFlujo: calcFechaFlujo(fecha, cartera), usuario: currentUser, carteraDestino: '', idTransferencia: '', montoTransferencia: '' });
+  } else if (tipo === 'SALIDA EXTERNA') {
+    regs.push({ id: generateId(), fecha, hora: getHora(), cartera, tipo: 'SALIDA EXTERNA', categoria: '', monto: -Math.abs(monto), nota, fechaFlujo: calcFechaFlujo(fecha, cartera), usuario: currentUser, carteraDestino: '', idTransferencia: '', montoTransferencia: '' });
   } else {
     const m = tipo === 'INGRESO' ? Math.abs(monto) : -Math.abs(monto);
     regs.push({ id: generateId(), fecha, hora: getHora(), cartera, tipo, categoria, monto: m, nota, fechaFlujo: calcFechaFlujo(fecha, cartera), usuario: currentUser, carteraDestino: '', idTransferencia: '', montoTransferencia: '' });
@@ -1149,6 +1165,8 @@ function resetForm() {
   document.getElementById('f-nota').value = '';
   document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
   currentType = 'GASTO'; selectedCartera = ''; selectedCarteraDest = ''; selectedCategoria = '';
+  document.querySelectorAll('.type-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.type-tab.gas')?.classList.add('active');
   recurrentOn = false;
   document.getElementById('rec-switch').classList.remove('on');
   document.getElementById('rec-options').classList.remove('show');
@@ -1318,8 +1336,9 @@ function renderDashboard() {
     const rm = parseInt(parts[1]) - 1, ry = parseInt(parts[0]);
     if (rm === month && ry === year) {
       const m = parseFloat(r.monto) || 0;
-      if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA') ing += m;
-      if (m < 0 && r.tipo !== 'TRANSFERENCIA') gas += m;
+      const isExternal = r.tipo === 'ENTRADA EXTERNA' || r.tipo === 'SALIDA EXTERNA';
+      if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA' && !isExternal) ing += m;
+      if (m < 0 && r.tipo !== 'TRANSFERENCIA' && !isExternal) gas += m;
     }
   });
   document.getElementById('dash-ing').textContent = '$' + fmtN(ing);
@@ -1431,7 +1450,9 @@ function renderRecords() {
   let records = allRecords.filter(r => {
     if (currentFilter !== 'todos') {
       if (currentFilter === 'TRANSFERENCIA' && r.tipo !== 'TRANSFERENCIA' && r.tipo !== 'INGRESO POR TRANSFERENCIA') return false;
-      if (currentFilter !== 'TRANSFERENCIA' && r.tipo !== currentFilter) return false;
+      if (currentFilter === 'ENTRADA EXTERNA' && r.tipo !== 'ENTRADA EXTERNA') return false;
+      if (currentFilter === 'SALIDA EXTERNA' && r.tipo !== 'SALIDA EXTERNA') return false;
+      if (currentFilter !== 'TRANSFERENCIA' && currentFilter !== 'ENTRADA EXTERNA' && currentFilter !== 'SALIDA EXTERNA' && r.tipo !== currentFilter) return false;
     }
     if (currentUserFilter !== 'todos' && r.usuario !== currentUserFilter) return false;
     if (listFilters.desde && r.fecha < listFilters.desde) return false;
@@ -1544,6 +1565,8 @@ function buildRecordItem(r, isFuture) {
   let iconClass = 'gas', iconChar = '↓';
   if (r.tipo === 'INGRESO' || r.tipo === 'INGRESO POR TRANSFERENCIA') { iconClass = 'ing'; iconChar = '↑'; }
   if (r.tipo === 'TRANSFERENCIA') { iconClass = 'tra'; iconChar = '⇄'; }
+  if (r.tipo === 'ENTRADA EXTERNA') { iconClass = 'tra'; iconChar = '⬇'; }
+  if (r.tipo === 'SALIDA EXTERNA') { iconClass = 'tra'; iconChar = '⬆'; }
   const monto = parseFloat(r.monto) || 0;
   const amtClass = monto > 0 ? 'pos' : monto < 0 ? 'neg' : 'neu';
   const amtStr = (monto >= 0 ? '+' : '−') + '$' + fmtN(Math.abs(monto));
@@ -1552,7 +1575,7 @@ function buildRecordItem(r, isFuture) {
   item.innerHTML = `
     <div class="record-icon ${iconClass}">${iconChar}</div>
     <div class="record-body">
-      <div class="record-cat">${r.categoria || (r.tipo === 'TRANSFERENCIA' ? 'Transferencia' : r.tipo)}</div>
+      <div class="record-cat">${r.categoria || (r.tipo === 'TRANSFERENCIA' ? 'Transferencia' : r.tipo === 'ENTRADA EXTERNA' ? 'Entrada de Fuera' : r.tipo === 'SALIDA EXTERNA' ? 'Salida hacia Afuera' : r.tipo)}</div>
       <div class="record-meta">${meta}${r.nota ? ' · ' + r.nota : ''}${isFuture ? ' · ' + formatDate(r.fecha) : ''}</div>
     </div>
     <div class="record-amount ${amtClass}">${amtStr}</div>`;
@@ -1884,8 +1907,9 @@ function renderDashboardAnalytics() {
   let ing = 0, gas = 0;
   recs.forEach(r => {
     const m = parseFloat(r.monto) || 0;
-    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA') ing += m;
-    if (m < 0 && r.tipo !== 'TRANSFERENCIA') gas += m;
+    const isExt = r.tipo === 'ENTRADA EXTERNA' || r.tipo === 'SALIDA EXTERNA';
+    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA' && !isExt) ing += m;
+    if (m < 0 && r.tipo !== 'TRANSFERENCIA' && !isExt) gas += m;
   });
   const bal = ing + gas;
   document.getElementById('an-ing').textContent = '$' + fmtN(ing);
@@ -1920,8 +1944,9 @@ function renderTrendChart12() {
     let ing = 0, gas = 0;
     recs.forEach(r => {
       const mv = parseFloat(r.monto) || 0;
-      if (mv > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA') ing += mv;
-      if (mv < 0 && r.tipo !== 'TRANSFERENCIA') gas += Math.abs(mv);
+      const isExt2 = r.tipo === 'ENTRADA EXTERNA' || r.tipo === 'SALIDA EXTERNA';
+      if (mv > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA' && !isExt2) ing += mv;
+      if (mv < 0 && r.tipo !== 'TRANSFERENCIA' && !isExt2) gas += Math.abs(mv);
     });
     labels.push(mNames[m] + (a !== ref.getFullYear() ? " '" + String(a).slice(2) : ''));
     ingData.push(Math.round(ing));
@@ -2232,8 +2257,9 @@ function buildContextoFinanciero() {
       const p = r.fecha ? r.fecha.split('-') : [];
       if (parseInt(p[0]) !== a || parseInt(p[1]) - 1 !== m) return;
       const mv = parseFloat(r.monto) || 0;
-      if (mv > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA') ing += mv;
-      if (mv < 0 && r.tipo !== 'TRANSFERENCIA') gas += Math.abs(mv);
+      const isExt2 = r.tipo === 'ENTRADA EXTERNA' || r.tipo === 'SALIDA EXTERNA';
+      if (mv > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA' && !isExt2) ing += mv;
+      if (mv < 0 && r.tipo !== 'TRANSFERENCIA' && !isExt2) gas += Math.abs(mv);
     });
     resumenMensual.push(`${mNames[m]} ${a}: Ingresos $${fmtN(ing)}, Gastos $${fmtN(gas)}, Balance ${ing-gas >= 0 ? '+' : ''}$${fmtN(ing-gas)}`);
   }
