@@ -454,6 +454,9 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   <div class="sidebar-nav-item" id="snav-proy" onclick="showPage('proy')">
     <span class="sidebar-nav-icon">📊</span> Dashboard
   </div>
+<div class="sidebar-nav-item" id="snav-deudas" onclick="showPage('deudas')">
+    <span class="sidebar-nav-icon">💳</span> Deudas
+  </div>
   <div class="sidebar-nav-item" onclick="abrirProyeccion()">
     <span class="sidebar-nav-icon">📈</span> Proyección
   </div>
@@ -822,6 +825,93 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
 </div>
 
 <!-- CONFIG -->
+<div id="page-deudas" class="page">
+  <div class="topbar"><div class="topbar-title">💳 Deudas</div></div>
+  <div style="padding:0 16px 20px;">
+
+    <!-- RESUMEN TOTAL -->
+    <div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:16px;margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:12px;">Resumen de Deudas</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:12px;">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">DEUDA TOTAL</div>
+          <div id="deudas-total" style="font-size:22px;font-weight:800;color:var(--red);">$0.00</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:12px;">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">PAGO MENSUAL</div>
+          <div id="deudas-mensual" style="font-size:22px;font-weight:800;color:var(--text);">$0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTÓN NUEVA DEUDA -->
+    <div onclick="mostrarFormDeuda()" style="padding:13px;background:var(--green);border-radius:var(--radius-sm);font-size:13px;font-weight:700;color:#000;text-align:center;cursor:pointer;margin-bottom:16px;">+ Registrar nueva deuda</div>
+
+    <!-- FORMULARIO NUEVA DEUDA (oculto por defecto) -->
+    <div id="form-deuda" style="display:none;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:16px;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px;">Nueva Deuda</div>
+
+      <div style="margin-bottom:10px;">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">NOMBRE</div>
+        <input id="d-nombre" placeholder="Ej: Crédito AAC, Deuda Suegra..." style="width:100%;padding:10px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:13px;box-sizing:border-box;">
+      </div>
+
+      <div style="margin-bottom:10px;">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">TIPO</div>
+        <select id="d-tipo" style="width:100%;padding:10px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:13px;box-sizing:border-box;">
+          <option value="CREDITO_PERSONAL">Crédito Personal</option>
+          <option value="MESES_SIN_INTERESES">Meses Sin Intereses</option>
+          <option value="PRESTAMO_PERSONAL">Préstamo Personal</option>
+          <option value="TDC">Tarjeta de Crédito</option>
+          <option value="OTRO">Otro</option>
+        </select>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">MONTO ORIGINAL</div>
+          <input id="d-monto-original" type="number" placeholder="0.00" style="width:100%;padding:10px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">SALDO ACTUAL</div>
+          <input id="d-saldo-actual" type="number" placeholder="0.00" style="width:100%;padding:10px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">MENSUALIDAD</div>
+          <input id="d-mensualidad" type="number" placeholder="0.00" style="width:100%;padding:10px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">TASA INTERÉS ANUAL %</div>
+          <input id="d-tasa" type="number" placeholder="0 si no aplica" style="width:100%;padding:10px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+
+      <div style="margin-bottom:10px;">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">FECHA INICIO</div>
+        <input id="d-fecha-inicio" type="date" style="width:100%;padding:10px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:13px;box-sizing:border-box;">
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">CARTERA DE PAGO</div>
+        <select id="d-cartera-pago" style="width:100%;padding:10px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:13px;box-sizing:border-box;">
+        </select>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div onclick="cancelarFormDeuda()" style="padding:11px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;font-weight:600;color:var(--text2);text-align:center;cursor:pointer;">Cancelar</div>
+        <div onclick="guardarDeuda()" style="padding:11px;background:var(--green);border-radius:var(--radius-sm);font-size:13px;font-weight:700;color:#000;text-align:center;cursor:pointer;">Guardar</div>
+      </div>
+    </div>
+
+    <!-- LISTA DE DEUDAS -->
+    <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px;">Deudas Activas</div>
+    <div id="deudas-lista"></div>
+
+  </div>
+</div>
 <div id="page-cfg" class="page">
   <div class="topbar"><div class="topbar-title">Configuración</div></div>
   <div style="padding: 0 16px 20px;">
@@ -865,7 +955,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   <div class="nav-item" id="nav-list" onclick="showPage('list')"><div class="nav-icon">≡</div><span>Registros</span></div>
   <div class="nav-add" onclick="showPage('form')">+</div>
   <div class="nav-item" id="nav-proy" onclick="showPage('proy')"><div class="nav-icon">📊</div><span>Dashboard</span></div>
-  <div class="nav-item" onclick="abrirProyeccion()"><div class="nav-icon">📈</div><span>Proyección</span></div>
+  <div class="nav-item" id="nav-deudas" onclick="showPage('deudas')"><div class="nav-icon">💳</div><span>Deudas</span></div><div class="nav-item" onclick="abrirProyeccion()"><div class="nav-icon">📈</div><span>Proyección</span></div>
   <div class="nav-item" id="nav-chat" onclick="showPage('chat')"><div class="nav-icon">🤖</div><span>IA</span></div>
   <div class="nav-item" id="nav-cfg" onclick="showPage('cfg')"><div class="nav-icon">⚙</div><span>Config</span></div>
 </div>
@@ -1001,6 +1091,7 @@ function showPage(p) {
   if (p === 'cfg') renderConfigPage();
   if (p === 'proy') renderDashboardAnalytics();
   if (p === 'chat') { document.getElementById('chat-input')?.focus(); }
+  if (p === 'deudas') renderDeudas();
 }
 
 function setUser(u, el) {
@@ -2460,6 +2551,189 @@ function updateResponsiveLayout() {
 }
 window.addEventListener('resize', updateResponsiveLayout);
 document.addEventListener('DOMContentLoaded', updateResponsiveLayout);
+
+// ── MÓDULO DEUDAS ──
+let deudas = [];
+
+function mostrarFormDeuda() {
+  const form = document.getElementById('form-deuda');
+  form.style.display = 'block';
+  // Llenar select de carteras
+  const sel = document.getElementById('d-cartera-pago');
+  sel.innerHTML = carteras.map(c => `<option value="${c.cartera}">${c.cartera}</option>`).join('');
+  // Fecha de hoy por defecto
+  document.getElementById('d-fecha-inicio').value = new Date().toISOString().split('T')[0];
+}
+
+function cancelarFormDeuda() {
+  document.getElementById('form-deuda').style.display = 'none';
+  limpiarFormDeuda();
+}
+
+function limpiarFormDeuda() {
+  document.getElementById('d-nombre').value = '';
+  document.getElementById('d-monto-original').value = '';
+  document.getElementById('d-saldo-actual').value = '';
+  document.getElementById('d-mensualidad').value = '';
+  document.getElementById('d-tasa').value = '';
+}
+
+async function guardarDeuda() {
+  const nombre = document.getElementById('d-nombre').value.trim();
+  const montoOriginal = parseFloat(document.getElementById('d-monto-original').value) || 0;
+  const saldoActual = parseFloat(document.getElementById('d-saldo-actual').value) || 0;
+  const mensualidad = parseFloat(document.getElementById('d-mensualidad').value) || 0;
+  const tasa = parseFloat(document.getElementById('d-tasa').value) || 0;
+  const fechaInicio = document.getElementById('d-fecha-inicio').value;
+  const tipo = document.getElementById('d-tipo').value;
+  const carteraPago = document.getElementById('d-cartera-pago').value;
+
+  if (!nombre) { alert('Escribe el nombre de la deuda'); return; }
+  if (!montoOriginal) { alert('Ingresa el monto original'); return; }
+  if (!mensualidad) { alert('Ingresa la mensualidad'); return; }
+
+  // Calcular meses restantes y fecha fin estimada
+  const mesesRestantes = saldoActual > 0 && mensualidad > 0 ? Math.ceil(saldoActual / mensualidad) : 0;
+  const fechaFin = new Date(fechaInicio);
+  fechaFin.setMonth(fechaFin.getMonth() + mesesRestantes);
+  const fechaFinEst = fechaFin.toISOString().split('T')[0];
+
+  const deuda = {
+    id: 'D-' + Date.now(),
+    nombre, tipo, montoOriginal, saldoActual, mensualidad,
+    plazoMeses: mesesRestantes,
+    tasaInteres: tasa,
+    fechaInicio, fechaFinEst, carteraPago,
+    activa: true
+  };
+
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'addDeuda', deuda })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      deudas.push(deuda);
+      cancelarFormDeuda();
+      renderDeudas();
+      alert('✅ Deuda guardada correctamente');
+    } else {
+      alert('Error al guardar: ' + data.error);
+    }
+  } catch(e) {
+    alert('Error de conexión: ' + e.message);
+  }
+}
+
+async function eliminarDeuda(id) {
+  if (!confirm('¿Eliminar esta deuda?')) return;
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'deleteDeuda', id })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      deudas = deudas.filter(d => d.id !== id);
+      renderDeudas();
+    }
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function marcarPagoDeuda(id) {
+  const deuda = deudas.find(d => d.id === id);
+  if (!deuda) return;
+  const nuevoSaldo = Math.max(0, deuda.saldoActual - deuda.mensualidad);
+  const activa = nuevoSaldo > 0;
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'updateDeuda', id, data: { saldoActual: nuevoSaldo, activa } })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      deuda.saldoActual = nuevoSaldo;
+      deuda.activa = activa;
+      renderDeudas();
+    }
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+function renderDeudas() {
+  const lista = document.getElementById('deudas-lista');
+  if (!lista) return;
+
+  const activas = deudas.filter(d => d.activa);
+  let totalDeuda = 0;
+  let totalMensual = 0;
+  activas.forEach(d => { totalDeuda += d.saldoActual; totalMensual += d.mensualidad; });
+
+  const el = document.getElementById('deudas-total');
+  const em = document.getElementById('deudas-mensual');
+  if (el) el.textContent = '$' + totalDeuda.toLocaleString('es-MX', {minimumFractionDigits:2});
+  if (em) em.textContent = '$' + totalMensual.toLocaleString('es-MX', {minimumFractionDigits:2});
+
+  if (activas.length === 0) {
+    lista.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px;">Sin deudas activas 🎉</div>';
+    return;
+  }
+
+  lista.innerHTML = activas.map(d => {
+    const pct = d.montoOriginal > 0 ? Math.round((1 - d.saldoActual / d.montoOriginal) * 100) : 0;
+    const mesesRestantes = d.mensualidad > 0 ? Math.ceil(d.saldoActual / d.mensualidad) : 0;
+    const tipoLabel = {
+      CREDITO_PERSONAL: 'Crédito Personal',
+      MESES_SIN_INTERESES: 'Meses Sin Intereses',
+      PRESTAMO_PERSONAL: 'Préstamo Personal',
+      TDC: 'Tarjeta de Crédito',
+      OTRO: 'Otro'
+    }[d.tipo] || d.tipo;
+
+    return `
+    <div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:14px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text);">${d.nombre}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">${tipoLabel} · ${d.carteraPago}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:16px;font-weight:800;color:var(--red);">$${d.saldoActual.toLocaleString('es-MX',{minimumFractionDigits:2})}</div>
+          <div style="font-size:11px;color:var(--text3);">saldo actual</div>
+        </div>
+      </div>
+
+      <!-- Barra de progreso -->
+      <div style="background:var(--bg3);border-radius:4px;height:6px;margin-bottom:8px;overflow:hidden;">
+        <div style="background:var(--green);height:100%;width:${pct}%;border-radius:4px;transition:width 0.3s;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-size:11px;color:var(--text3);">${pct}% pagado</div>
+        <div style="font-size:11px;color:var(--text3);">${mesesRestantes} meses restantes</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:8px;">
+          <div style="font-size:10px;color:var(--text3);">MENSUALIDAD</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);">$${d.mensualidad.toLocaleString('es-MX',{minimumFractionDigits:2})}</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:8px;">
+          <div style="font-size:10px;color:var(--text3);">MONTO ORIGINAL</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);">$${d.montoOriginal.toLocaleString('es-MX',{minimumFractionDigits:2})}</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div onclick="marcarPagoDeuda('${d.id}')" style="padding:9px;background:var(--green-dim);border:0.5px solid var(--green-border);border-radius:var(--radius-sm);font-size:12px;font-weight:700;color:var(--green);text-align:center;cursor:pointer;">✓ Registrar pago</div>
+        <div onclick="eliminarDeuda('${d.id}')" style="padding:9px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);font-size:12px;font-weight:600;color:var(--text3);text-align:center;cursor:pointer;">🗑 Eliminar</div>
+      </div>
+    </div>`;
+  }).join('');
+}
 
 // ── SIDEBAR SYNC ──
 const origShowPage = showPage;
