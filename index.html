@@ -2770,7 +2770,7 @@ function renderPresupuesto() {
   });
 
   // Filtrar metas con presupuesto definido
-  const metasActivas = metas.filter(m => m.presupuesto && m.presupuesto < 0);
+  const metasActivas = metasConfig.filter(m => m.presupuesto && m.presupuesto < 0);
   if (metasActivas.length === 0) {
     const bars = document.getElementById('budget-bars');
     if (bars) bars.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px;">Sin presupuestos configurados</div>';
