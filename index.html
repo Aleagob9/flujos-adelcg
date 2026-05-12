@@ -2883,8 +2883,7 @@ function renderPresupuesto() {
   const bt = document.getElementById('budget-total');
   const bg = document.getElementById('budget-gastado');
   if (bt) bt.textContent = '$' + totalPresupuesto.toLocaleString('es-MX', {minimumFractionDigits:2});
-  if (bg) bg.textContent = '$' + totalGastado.toLocaleString('es-MX', {minimumFractionDigits:2});
-}
+  }
 }
 
 // ── SIDEBAR SYNC ──
