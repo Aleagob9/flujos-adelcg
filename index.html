@@ -558,6 +558,22 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
     </div>
   </div>
 
+<!-- PRESUPUESTO -->
+<div style="padding:0 16px 16px;">
+  <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px;">📊 Presupuesto del mes</div>
+  <div id="budget-summary" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+    <div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:10px;">
+      <div style="font-size:10px;color:var(--text3);">PRESUPUESTO TOTAL</div>
+      <div id="budget-total" style="font-size:16px;font-weight:800;color:var(--text);">$0.00</div>
+    </div>
+    <div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:10px;">
+      <div style="font-size:10px;color:var(--text3);">GASTADO</div>
+      <div id="budget-gastado" style="font-size:16px;font-weight:800;color:var(--red);">$0.00</div>
+    </div>
+  </div>
+  <div id="budget-bars"></div>
+</div>
+
   <div class="wallets-group-title">💵 Carteras Cash</div>
     <div class="wallets-grid" id="wallets-cash"></div>
     <div class="wallets-group-title">💳 Tarjetas de Crédito</div>
@@ -1458,6 +1474,7 @@ function renderDashboard() {
     card.onclick = () => openWalletDetail(c);
     gt.appendChild(card);
   });
+renderPresupuesto();
   if (privacyOn) setTimeout(applyPrivacyToPage, 10);
 }
 
@@ -2733,6 +2750,83 @@ function renderDeudas() {
       </div>
     </div>`;
   }).join('');
+}
+
+// ── MÓDULO PRESUPUESTO ──
+function renderPresupuesto() {
+  const today = new Date();
+  const month = today.getMonth();
+  const year = today.getFullYear();
+
+  // Calcular gastos reales del mes por categoría
+  const gastosPorCat = {};
+  allRecords.forEach(r => {
+    const fecha = new Date(r.fecha + 'T12:00:00');
+    if (fecha.getMonth() !== month || fecha.getFullYear() !== year) return;
+    if (r.tipo !== 'GASTO') return;
+    const cat = r.categoria || '';
+    const m = Math.abs(parseFloat(r.monto) || 0);
+    gastosPorCat[cat] = (gastosPorCat[cat] || 0) + m;
+  });
+
+  // Filtrar metas con presupuesto definido
+  const metasActivas = metas.filter(m => m.presupuesto && m.presupuesto < 0);
+  if (metasActivas.length === 0) {
+    const bars = document.getElementById('budget-bars');
+    if (bars) bars.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px;">Sin presupuestos configurados</div>';
+    return;
+  }
+
+  let totalPresupuesto = 0;
+  let totalGastado = 0;
+
+  const html = metasActivas.map(m => {
+    const presupuesto = Math.abs(m.presupuesto);
+    const gastado = gastosPorCat[m.categoria] || 0;
+    const pct = presupuesto > 0 ? Math.min((gastado / presupuesto) * 100, 100) : 0;
+    const pctReal = presupuesto > 0 ? (gastado / presupuesto) * 100 : 0;
+
+    totalPresupuesto += presupuesto;
+    totalGastado += gastado;
+
+    // Color y alerta según porcentaje
+    let color, alerta = '';
+    if (pctReal >= 100) {
+      color = 'var(--red)';
+      alerta = '<span style="font-size:10px;font-weight:700;color:var(--red);margin-left:6px;">⚠ LÍMITE</span>';
+    } else if (pctReal >= 80) {
+      color = '#f97316';
+      alerta = '<span style="font-size:10px;font-weight:700;color:#f97316;margin-left:6px;">⚡ 80%</span>';
+    } else if (pctReal >= 50) {
+      color = '#eab308';
+      alerta = '<span style="font-size:10px;font-weight:700;color:#eab308;margin-left:6px;">· 50%</span>';
+    } else {
+      color = 'var(--green)';
+    }
+
+    return `
+    <div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <div style="font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;">
+          ${m.categoria}${alerta}
+        </div>
+        <div style="font-size:11px;color:var(--text3);">
+          $${gastado.toLocaleString('es-MX',{minimumFractionDigits:0})} / $${presupuesto.toLocaleString('es-MX',{minimumFractionDigits:0})}
+        </div>
+      </div>
+      <div style="background:var(--bg3);border-radius:4px;height:7px;overflow:hidden;">
+        <div style="background:${color};height:100%;width:${pct}%;border-radius:4px;transition:width 0.4s;"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const bars = document.getElementById('budget-bars');
+  if (bars) bars.innerHTML = html;
+
+  const bt = document.getElementById('budget-total');
+  const bg = document.getElementById('budget-gastado');
+  if (bt) bt.textContent = '$' + totalPresupuesto.toLocaleString('es-MX', {minimumFractionDigits:2});
+  if (bg) bg.textContent = '$' + totalGastado.toLocaleString('es-MX', {minimumFractionDigits:2});
 }
 
 // ── SIDEBAR SYNC ──
