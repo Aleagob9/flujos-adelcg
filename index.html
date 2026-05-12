@@ -2842,7 +2842,7 @@ function renderPresupuesto() {
   }).join('');
 
   // Barra total variables
-  const pctTotal = totalPresupuestoVar > 0 ? (totalGastadoVar / totalPresupuestoVar) * 100 : 0;
+  const pctTotal = totalPresupuesto > 0 ? (totalGastado / totalPresupuesto) * 100 : 0;
   let colorTotal, alertaTotal = '', barraTotal = '';
   if (pctTotal > 100) {
     colorTotal = 'var(--red)';
@@ -2868,13 +2868,13 @@ function renderPresupuesto() {
         TOTAL VARIABLES${alertaTotal}
       </div>
       <div style="font-size:11px;color:var(--text3);">
-        $${totalGastadoVar.toLocaleString('es-MX',{minimumFractionDigits:0})} / $${totalPresupuestoVar.toLocaleString('es-MX',{minimumFractionDigits:0})}
+        $${totalGastado.toLocaleString('es-MX',{minimumFractionDigits:0})} / $${totalPresupuesto.toLocaleString('es-MX',{minimumFractionDigits:0})}
       </div>
     </div>
     <div style="background:var(--bg3);border-radius:6px;height:12px;overflow:hidden;">
       <div style="${barraTotal || `background:${colorTotal};`}height:100%;width:${Math.min(pctTotal,100)}%;border-radius:6px;transition:width 0.4s;"></div>
     </div>
-    <div style="font-size:10px;color:var(--text3);margin-top:4px;">${pctTotal.toFixed(1)}% del presupuesto variable utilizado</div>
+    <div style="font-size:10px;color:var(--text3);margin-top:4px;">${pctTotal.toFixed(1)}% del presupuesto total utilizado</div>
   </div>`;
 
 const bars = document.getElementById('budget-bars');
