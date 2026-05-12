@@ -2877,13 +2877,13 @@ function renderPresupuesto() {
     <div style="font-size:10px;color:var(--text3);margin-top:4px;">${pctTotal.toFixed(1)}% del presupuesto variable utilizado</div>
   </div>`;
 
-  const bars = document.getElementById('budget-bars');
+const bars = document.getElementById('budget-bars');
   if (bars) bars.innerHTML = barraResumen + html;
 
   const bt = document.getElementById('budget-total');
   const bg = document.getElementById('budget-gastado');
   if (bt) bt.textContent = '$' + totalPresupuesto.toLocaleString('es-MX', {minimumFractionDigits:2});
-  }
+  if (bg) bg.textContent = '$' + totalGastado.toLocaleString('es-MX', {minimumFractionDigits:2});
 }
 
 // ── SIDEBAR SYNC ──
