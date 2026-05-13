@@ -3228,9 +3228,12 @@ function fpGetTDCProyectados() {
       const fecha = new Date((r.fecha || '').substring(0,10) + 'T12:00:00');
       if (isNaN(fecha)) return;
       const dia = fecha.getDate();
-      let mesPago = fecha.getMonth() + (dia > tdc.diaCorte ? 1 : 0);
+      // Período de corte: del día (diaCorte+1) del mes anterior al diaCorte del mes actual
+      // Si dia <= diaCorte: cae en el período que cierra ESTE mes → pago el mes SIGUIENTE
+      // Si dia > diaCorte: cae en el período que cierra el mes SIGUIENTE → pago en DOS meses
+      let mesPago = fecha.getMonth() + 1 + (dia > tdc.diaCorte ? 1 : 0);
       let anoPago = fecha.getFullYear();
-      if (mesPago > 11) { mesPago = 0; anoPago++; }
+      while (mesPago > 11) { mesPago -= 12; anoPago++; }
       const key = `${anoPago}-${mesPago}`;
       gastosPorPeriodo[key] = (gastosPorPeriodo[key] || 0) + Math.abs(parseFloat(r.monto) || 0);
     });
