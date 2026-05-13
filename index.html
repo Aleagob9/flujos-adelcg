@@ -1173,7 +1173,7 @@ function renderChipsCategoria() {
     const el = document.createElement('div');
     el.className = 'chip' + (selectedCategoria === c ? ' active ' + cls : '');
     el.textContent = c;
-    el.onclick = () => { selectedCategoria = c; renderChipsCategoria(); };
+    el.onclick = () => { selectedCategoria = c; renderChipsCategoria(); verificarCategoriaDeuda(c); };
     wrap.appendChild(el);
   });
 }
@@ -2718,6 +2718,17 @@ function actualizarSelectDeudas() {
     activas.map(d => `<option value="${d.id}">${d.nombre}</option>`).join('');
 }
 
+function verificarCategoriaDeuda(cat) {
+  const container = document.getElementById('mov-deuda-container');
+  if (!container) return;
+  const cats = ['PAGO A DEUDA', 'MESES SIN INTERESES'];
+  if (cats.includes(cat)) {
+    container.style.display = 'block';
+    actualizarSelectDeudas();
+  } else {
+    container.style.display = 'none';
+  }
+}
 function mostrarOcultarDeudaEnForm() {
   const cat = document.getElementById('m-categoria');
   if (!cat) return;
