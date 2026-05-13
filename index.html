@@ -915,6 +915,11 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
         <input id="d-fecha-inicio" type="date" style="width:100%;padding:10px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:13px;box-sizing:border-box;">
       </div>
 
+      <div style="margin-bottom:14px;">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">CARTERA DE PAGO</div>
+        <select id="d-cartera-pago" style="width:100%;padding:10px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:13px;box-sizing:border-box;">
+        </select>
+      </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div onclick="cancelarFormDeuda()" style="padding:11px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;font-weight:600;color:var(--text2);text-align:center;cursor:pointer;">Cancelar</div>
@@ -1115,7 +1120,7 @@ function showPage(p) {
   if (p === 'proy') renderDashboardAnalytics();
   if (p === 'chat') { document.getElementById('chat-input')?.focus(); }
   if (p === 'deudas') renderDeudas();
-if (p === 'home' || p === 'resumen') mostrarOcultarDeudaEnForm();
+  if (p === 'form') mostrarOcultarDeudaEnForm();
 }
 
 function setUser(u, el) {
@@ -2583,7 +2588,8 @@ let deudas = [];
 function mostrarFormDeuda() {
   const form = document.getElementById('form-deuda');
   form.style.display = 'block';
-
+  const sel = document.getElementById('d-cartera-pago');
+  sel.innerHTML = carteras.map(c => `<option value="${c.cartera}">${c.cartera}</option>`).join('');
   document.getElementById('d-fecha-inicio').value = new Date().toISOString().split('T')[0];
   // Mostrar/ocultar plazo según tipo
   document.getElementById('d-tipo').onchange = function() {
@@ -2618,7 +2624,7 @@ async function guardarDeuda() {
   const tasa = parseFloat(document.getElementById('d-tasa').value) || 0;
   const fechaInicio = document.getElementById('d-fecha-inicio').value;
   const tipo = document.getElementById('d-tipo').value;
-  const carteraPago = '';
+  const carteraPago = document.getElementById('d-cartera-pago').value;
   const plazoTotal = parseInt(document.getElementById('d-plazo-total').value) || 0;
 
   if (!nombre) { alert('Escribe el nombre de la deuda'); return; }
@@ -2637,7 +2643,8 @@ async function guardarDeuda() {
   const fechaFinEst = fechaFin.toISOString().split('T')[0];
 
   // Obtener día de pago de la cartera seleccionada
-  const diaPago = 0;
+  const carteraInfo = carteras.find(c => c.cartera === carteraPago);
+  const diaPago = carteraInfo ? (carteraInfo.diaPago || 0) : 0;
 
   const deuda = {
     id: 'D-' + Date.now(),
@@ -2685,7 +2692,7 @@ async function eliminarDeuda(id) {
 }
 
 function irARegistrarPagoDeuda(id, nombre) {
-  showPage('home');
+  showPage('form');
   setTimeout(() => {
     // Abrir formulario de nuevo movimiento
     const btn = document.querySelector('[onclick*="openModal"]') || document.querySelector('.fab') || document.querySelector('[onclick*="newMov"]');
@@ -3005,6 +3012,7 @@ function showPageWithSidebar(p) {
 }
 // Override showPage to also update sidebar
 window.addEventListener('DOMContentLoaded', () => {
+  mostrarOcultarDeudaEnForm();
   // patch all sidebar nav items
   document.querySelectorAll('[id^="snav-"]').forEach(el => {
     const page = el.id.replace('snav-', '');
