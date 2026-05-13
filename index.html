@@ -1270,6 +1270,13 @@ function enviarAlSheet(regs, btn) {
     regs.forEach(r => { allRecords.unshift(r); pendingIds.add(r.id); });
     saveLocal(); resetForm();
     btn.classList.remove('loading'); btn.textContent = 'Guardar registro';
+// Descontar pago de deuda si aplica
+    const deudaId = document.getElementById('mov-deuda-id')?.value;
+    if (deudaId) {
+      const montoTotal = regs.reduce((s, r) => s + Math.abs(parseFloat(r.monto) || 0), 0);
+      descontarPagoDeDeuda(deudaId, montoTotal);
+    }
+    document.getElementById('mov-deuda-container').style.display = 'none';
     showToast(regs.length > 2 ? `${regs.length} registros guardados ✓` : 'Registro guardado ✓', 'success');
     showPage('list');
   })
