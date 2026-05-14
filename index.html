@@ -3219,10 +3219,13 @@ function fpGetTDCProyectados() {
 
   FP_TDCS.forEach(tdc => {
     const gastosPorPeriodo = {};
+    let debugCount = 0;
     allRecords.forEach(r => {
       if (r.cartera !== tdc.nombre) return;
       if (!['GASTO','SALIDA EXTERNA'].includes(r.tipo)) return;
-      const fecha = new Date((r.fecha || r['FECHA OPERACIÓN'] || r['FECHA OPERACION'] || '').substring(0,10) + 'T12:00:00');
+      const fechaStr = (r.fecha || r['FECHA OPERACIÓN'] || r['FECHA OPERACION'] || '').substring(0,10);
+      if (tdc.nombre === 'T. COSTCO' && debugCount < 3) { console.log('COSTCO record:', JSON.stringify({fecha: r.fecha, FECHA_OP: r['FECHA OPERACIÓN'], fechaStr, monto: r.monto, tipo: r.tipo})); debugCount++; }
+      const fecha = new Date(fechaStr + 'T12:00:00');
       if (isNaN(fecha)) return;
       const dia = fecha.getDate();
       // Período de corte: del día (diaCorte+1) del mes anterior al diaCorte del mes actual
