@@ -3228,7 +3228,7 @@ function fpGetTDCProyectados() {
       // Período de corte: del día (diaCorte+1) del mes anterior al diaCorte del mes actual
       // Si dia <= diaCorte: cae en el período que cierra ESTE mes → pago el mes SIGUIENTE
       // Si dia > diaCorte: cae en el período que cierra el mes SIGUIENTE → pago en DOS meses
-      let mesPago = fecha.getMonth() + 1 + (dia > tdc.diaCorte ? 1 : 0);
+      let mesPago = fecha.getMonth() + 1 + (dia >= tdc.diaCorte ? 1 : 0);
       let anoPago = fecha.getFullYear();
       while (mesPago > 11) { mesPago -= 12; anoPago++; }
       const key = `${anoPago}-${mesPago}`;
