@@ -1876,11 +1876,16 @@ function loadRecords() {
         saveLocal();
       }
 
+       if (data.deudas && data.deudas.length) {
+        deudas = data.deudas;
+      }
+
       renderDashboard();
       const ap = document.querySelector('.page.active');
       if (ap && ap.id === 'page-list') renderRecords();
       if (ap && ap.id === 'page-proy') renderDashboardAnalytics();
-      showToast(`${allRecords.length} registros cargados \u2713`, 'success');
+      if (ap && ap.id === 'page-deudas') renderDeudas();
+      showToast(`${allRecords.length} registros cargados ✓`, 'success');
     })
     .catch(() => showToast('Sin conexi\u00f3n \u2014 usando datos locales', ''));
 }
@@ -1941,9 +1946,11 @@ function autoSync() {
 
       const ap = document.querySelector('.page.active');
       if (!ap) return;
+      if (data.deudas && data.deudas.length) deudas = data.deudas;
       if (ap.id === 'page-dash') renderDashboard();
       else if (ap.id === 'page-list') renderRecords();
       else if (ap.id === 'page-proy') renderDashboardAnalytics();
+      else if (ap.id === 'page-deudas') renderDeudas();
     })
     .catch(() => {})
     .finally(() => { syncBusy = false; });
