@@ -3212,42 +3212,36 @@ function fpGetFijosAuto() {
 }
 
 function fpGetTDCProyectados() {
-  // Para fechas futuras: proyectar pagos TDC basados en gastos acumulados del período actual
   const pagos = {};
   const today = new Date(); today.setHours(0,0,0,0);
   const year = today.getFullYear();
-
   FP_TDCS.forEach(tdc => {
     const gastosPorPeriodo = {};
-    let debugCount = 0;
     allRecords.forEach(r => {
       if (r.cartera !== tdc.nombre) return;
-      if (!['GASTO','SALIDA EXTERNA'].includes(r.tipo)) return;
+      if (r.tipo !== 'GASTO') return;
       const fechaStr = (r.fecha || r['FECHA OPERACIÓN'] || r['FECHA OPERACION'] || '').substring(0,10);
-      if (tdc.nombre === 'T. COSTCO' && debugCount < 3) { console.log('COSTCO record:', JSON.stringify({fecha: r.fecha, FECHA_OP: r['FECHA OPERACIÓN'], fechaStr, monto: r.monto, tipo: r.tipo})); debugCount++; }
       const fecha = new Date(fechaStr + 'T12:00:00');
       if (isNaN(fecha)) return;
       const dia = fecha.getDate();
-      // Período de corte: del día (diaCorte+1) del mes anterior al diaCorte del mes actual
-      // Si dia <= diaCorte: cae en el período que cierra ESTE mes → pago el mes SIGUIENTE
-      // Si dia > diaCorte: cae en el período que cierra el mes SIGUIENTE → pago en DOS meses
-      // dia > diaCorte: gasto después del corte → paga en 2 meses
-      // dia <= diaCorte: gasto antes/en el corte → paga el mes siguiente
-      let mesPago = fecha.getMonth() + 1 + (dia > tdc.diaCorte ? 1 : 0);
-      let anoPago = fecha.getFullYear();
-      while (mesPago > 11) { mesPago -= 12; anoPago++; }
-      const key = `${anoPago}-${mesPago}`;
+      const mesGasto = fecha.getMonth() + 1; // 1-12
+      const anoGasto = fecha.getFullYear();
+      // Si dia <= diaCorte: cierra este mes → pago el mes siguiente
+      // Si dia > diaCorte: cierra el mes siguiente → pago en dos meses
+      let mesPago = mesGasto + (dia > tdc.diaCorte ? 2 : 1);
+      let anoPago = anoGasto;
+      while (mesPago > 12) { mesPago -= 12; anoPago++; }
+      const key = `${anoPago}-${String(mesPago).padStart(2,'0')}`;
       gastosPorPeriodo[key] = (gastosPorPeriodo[key] || 0) + Math.abs(parseFloat(r.monto) || 0);
     });
-
     Object.entries(gastosPorPeriodo).forEach(([key, monto]) => {
       const [ano, mes] = key.split('-').map(Number);
       if (ano !== year) return;
-      const maxDia = new Date(ano, mes + 1, 0).getDate();
+      const maxDia = new Date(ano, mes, 0).getDate();
       const diaPago = Math.min(tdc.diaPago, maxDia);
-      const fechaPago = `${ano}-${String(mes+1).padStart(2,'0')}-${String(diaPago).padStart(2,'0')}`;
+      const fechaPago = `${ano}-${String(mes).padStart(2,'0')}-${String(diaPago).padStart(2,'0')}`;
       const fPago = new Date(fechaPago + 'T12:00:00');
-      if (fPago <= today) return; // Solo futuro
+      if (fPago <= today) return;
       if (!pagos[fechaPago]) pagos[fechaPago] = {};
       pagos[fechaPago][tdc.nombre] = (pagos[fechaPago][tdc.nombre] || 0) + monto;
     });
