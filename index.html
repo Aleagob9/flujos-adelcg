@@ -3078,7 +3078,7 @@ const FP_CATS_FIJO = ['RENTA','MUCHACHA','EDUCACION'];
 const FP_CATS_VAR = ['LUZ','AGUA','GAS','GASOLINA RAV4','GASOLINA JAC','CELULAR','COMIDA','SALUD-FARMACIA-CONSULTAS MEDICAS','SUPER','TRANSPORTE','VEHICULO','ROPA Y ACCESORIOS','TINTORERIA Y RENTA VESTUARIO','REGALOS','ESTACIONAMIENTO','VIAJE','COMISIONES-FINANCIEROS','MEJORAS CASA','ENTRETENIMIENTO','BELLEZA Y SPA','PROPINAS','OTROS'];
 const FP_CATS_DEUDA = ['CREDITO AAC','PAGO A DEUDA','MESES SIN INTERESES'];
 
-function fpFecha(d) { return d.toISOString().split('T')[0]; }
+function fpFecha(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function fpFmt(n) { return '$' + Math.abs(n).toLocaleString('es-MX',{minimumFractionDigits:0,maximumFractionDigits:0}); }
 
 function fpGetDiasAnio() {
