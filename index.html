@@ -3222,7 +3222,7 @@ function fpGetTDCProyectados() {
     allRecords.forEach(r => {
       if (r.cartera !== tdc.nombre) return;
       if (!['GASTO','SALIDA EXTERNA'].includes(r.tipo)) return;
-      const fecha = new Date((r.fecha || '').substring(0,10) + 'T12:00:00');
+      const fecha = new Date((r.fecha || r['FECHA OPERACIÓN'] || r['FECHA OPERACION'] || '').substring(0,10) + 'T12:00:00');
       if (isNaN(fecha)) return;
       const dia = fecha.getDate();
       // Período de corte: del día (diaCorte+1) del mes anterior al diaCorte del mes actual
