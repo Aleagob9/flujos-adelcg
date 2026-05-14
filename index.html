@@ -3066,7 +3066,7 @@ let fpHasta = null;
 
 const FP_CARTERAS_CASH = ['BANAMEX DEBITO','BAJIO DEBITO','FACIL','EFECTIVO','BBVA DEBITO','EFECTIVO SOFI'];
 const FP_TDCS = [
-  { nombre: 'T. COSTCO', diaPago: 14, diaCorte: 25 },
+  { nombre: 'T. COSTCO', diaPago: 14, diaCorte: 24 },
   { nombre: 'T. PLATINUM', diaPago: 30, diaCorte: 12 },
   { nombre: 'AMEX', diaPago: 30, diaCorte: 11 },
   { nombre: 'T. BBVA', diaPago: 26, diaCorte: 6 },
@@ -3228,7 +3228,9 @@ function fpGetTDCProyectados() {
       // Período de corte: del día (diaCorte+1) del mes anterior al diaCorte del mes actual
       // Si dia <= diaCorte: cae en el período que cierra ESTE mes → pago el mes SIGUIENTE
       // Si dia > diaCorte: cae en el período que cierra el mes SIGUIENTE → pago en DOS meses
-      let mesPago = fecha.getMonth() + 1 + (dia >= tdc.diaCorte ? 1 : 0);
+      // dia > diaCorte: gasto después del corte → paga en 2 meses
+      // dia <= diaCorte: gasto antes/en el corte → paga el mes siguiente
+      let mesPago = fecha.getMonth() + 1 + (dia > tdc.diaCorte ? 1 : 0);
       let anoPago = fecha.getFullYear();
       while (mesPago > 11) { mesPago -= 12; anoPago++; }
       const key = `${anoPago}-${mesPago}`;
