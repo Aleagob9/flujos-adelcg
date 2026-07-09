@@ -4,32 +4,34 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Flujos">
 <title>Flujos Familia AdelCG</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #0a0a0c;
-  --bg2: #131317;
-  --bg3: #1c1c22;
-  --bg4: #24242c;
-  --bg5: #2e2e38;
-  --border: rgba(255,255,255,0.06);
-  --border2: rgba(255,255,255,0.13);
-  --border3: rgba(255,255,255,0.22);
-  --text: #ffffff;
-  --text2: #b0b0c8;
-  --text3: #606078;
-  --green: #00e096;
-  --green-dim: rgba(0,224,150,0.11);
-  --green-border: rgba(0,224,150,0.28);
-  --red: #ff5050;
-  --red-dim: rgba(255,80,80,0.11);
-  --red-border: rgba(255,80,80,0.28);
-  --blue: #4da6ff;
-  --blue-dim: rgba(77,166,255,0.11);
-  --blue-border: rgba(77,166,255,0.28);
+  --bg: #F5F9FE;
+  --bg2: #FFFFFF;
+  --bg3: #EDF3FB;
+  --bg4: #E2ECF7;
+  --bg5: #D5E4F5;
+  --border: rgba(22,48,79,0.10);
+  --border2: rgba(22,48,79,0.18);
+  --border3: rgba(22,48,79,0.30);
+  --text: #16304F;
+  --text2: #5B7290;
+  --text3: #8CA0B8;
+  --green: #2C7A3F;
+  --green-dim: rgba(44,122,63,0.10);
+  --green-border: rgba(44,122,63,0.32);
+  --red: #B03A3A;
+  --red-dim: rgba(176,58,58,0.10);
+  --red-border: rgba(176,58,58,0.32);
+  --blue: #378ADD;
+  --blue-dim: rgba(55,138,221,0.10);
+  --blue-border: rgba(55,138,221,0.32);
+  --accent: #378ADD;
+  --on-accent: #FFFFFF;
   --radius: 16px;
   --radius-sm: 10px;
   --font: 'DM Sans', sans-serif;
@@ -64,11 +66,11 @@ body {
   font-size: 11px; font-weight: 500; color: var(--text3);
   cursor: pointer; transition: color 0.2s; user-select: none; padding: 4px 0;
 }
-.nav-item.active { color: var(--green); }
+.nav-item.active { color: var(--accent); }
 .nav-icon { font-size: 20px; line-height: 1; }
 .nav-add {
   width: 54px; height: 54px; border-radius: 50%;
-  background: var(--green); color: #000;
+  background: var(--accent); color: var(--on-accent);
   display: flex; align-items: center; justify-content: center;
   font-size: 28px; font-weight: 300; line-height: 1;
   margin-top: -22px;
@@ -94,7 +96,7 @@ body {
   cursor: pointer; transition: all 0.2s;
   color: var(--text3); user-select: none; white-space: nowrap;
 }
-.user-btn.active { background: var(--green); color: #000; font-weight: 700; }
+.user-btn.active { background: var(--accent); color: var(--on-accent); font-weight: 700; }
 
 /* DASHBOARD */
 .dash-hero {
@@ -137,7 +139,7 @@ body {
 .adv-input { width: 100%; background: var(--bg3); border: 0.5px solid var(--border2); border-radius: var(--radius-sm); padding: 10px 12px; color: var(--text); font-family: var(--font); font-size: 13px; outline: none; -webkit-appearance: none; }
 .adv-btn-row { display: flex; gap: 6px; margin-top: 10px; }
 .adv-btn { flex: 1; padding: 11px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 700; text-align: center; cursor: pointer; font-family: var(--font); }
-.adv-btn.apply { background: var(--green); color: #000; }
+.adv-btn.apply { background: var(--accent); color: var(--on-accent); }
 .adv-btn.clear { background: var(--bg3); color: var(--text2); border: 0.5px solid var(--border2); }
 
 /* WALLETS */
@@ -224,7 +226,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
 .toggle-label { font-size: 14px; font-weight: 600; color: var(--text); }
 .toggle-sub { font-size: 11px; color: var(--text2); margin-top: 3px; }
 .toggle-switch { width: 44px; height: 26px; border-radius: 13px; background: var(--bg4); position: relative; transition: background 0.2s; flex-shrink: 0; }
-.toggle-switch.on { background: var(--green); }
+.toggle-switch.on { background: var(--accent); }
 .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: white; transition: transform 0.2s; }
 .toggle-switch.on .toggle-thumb { transform: translateX(18px); }
 .recurrent-options { background: var(--bg2); border: 0.5px solid var(--border2); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 16px; display: none; }
@@ -234,7 +236,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
 .rec-label { font-size: 10px; color: var(--text2); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 700; }
 .rec-input { width: 100%; background: var(--bg3); border: 0.5px solid var(--border2); border-radius: var(--radius-sm); padding: 10px 12px; color: var(--text); font-family: var(--font); font-size: 13px; outline: none; -webkit-appearance: none; }
 
-.submit-btn { width: 100%; padding: 18px; background: var(--green); color: #000; border-radius: var(--radius); font-size: 16px; font-weight: 700; cursor: pointer; text-align: center; margin-top: 8px; transition: opacity 0.15s, transform 0.15s; user-select: none; font-family: var(--display); }
+.submit-btn { width: 100%; padding: 18px; background: var(--accent); color: var(--on-accent); border-radius: var(--radius); font-size: 16px; font-weight: 700; cursor: pointer; text-align: center; margin-top: 8px; transition: opacity 0.15s, transform 0.15s; user-select: none; font-family: var(--display); }
 .submit-btn:active { opacity: 0.85; transform: scale(0.99); }
 .submit-btn.loading { opacity: 0.6; pointer-events: none; }
 
@@ -248,7 +250,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
 .modal-actions { display: flex; gap: 8px; margin-top: 18px; }
 .modal-btn { flex: 1; padding: 15px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; text-align: center; transition: opacity 0.15s; font-family: var(--font); }
 .modal-btn:active { opacity: 0.75; }
-.modal-btn.save { background: var(--green); color: #000; }
+.modal-btn.save { background: var(--accent); color: var(--on-accent); }
 .modal-btn.delete { background: var(--red-dim); color: var(--red); border: 0.5px solid var(--red-border); }
 .modal-btn.cancel { background: var(--bg3); color: var(--text2); }
 
@@ -266,7 +268,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
 .datepick-preset.active { background: var(--green-dim); color: var(--green); border-color: var(--green-border); }
 .datepick-actions { display: flex; gap: 8px; }
 .datepick-btn { flex: 1; padding: 13px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; text-align: center; font-family: var(--font); }
-.datepick-btn.apply { background: var(--green); color: #000; }
+.datepick-btn.apply { background: var(--accent); color: var(--on-accent); }
 .datepick-btn.cancel { background: var(--bg3); color: var(--text2); }
 
 /* TOAST */
@@ -360,7 +362,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   .sidebar-add-btn {
     margin: 8px 12px 16px;
     padding: 13px;
-    background: var(--green); color: #000;
+    background: var(--accent); color: var(--on-accent);
     border-radius: var(--radius-sm);
     font-size: 14px; font-weight: 700;
     text-align: center; cursor: pointer;
@@ -722,7 +724,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
       <span style="font-size:11px;color:var(--text2);">Hasta</span>
       <input type="date" id="rng-hasta" style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:7px 10px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;">
     </div>
-    <div onclick="renderDashboardAnalytics()" style="padding:7px 16px;background:var(--green);border-radius:var(--radius-sm);font-size:12px;font-weight:700;color:#000;cursor:pointer;">Aplicar</div>
+    <div onclick="renderDashboardAnalytics()" style="padding:7px 16px;background:var(--accent);border-radius:var(--radius-sm);font-size:12px;font-weight:700;color:var(--on-accent);cursor:pointer;">Aplicar</div>
   </div>
 
   <!-- Selector semana/mes según rango -->
@@ -816,7 +818,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   <div class="topbar" style="flex-wrap:wrap;gap:8px;">
     <div class="topbar-title">📈 Flujo Proyectado</div>
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-      <div id="fp-btn-sem" onclick="fpSetVista('semana')" style="padding:6px 14px;background:var(--green);border-radius:var(--radius-sm);font-size:12px;font-weight:700;color:#000;cursor:pointer;">Semanal</div>
+      <div id="fp-btn-sem" onclick="fpSetVista('semana')" style="padding:6px 14px;background:var(--accent);border-radius:var(--radius-sm);font-size:12px;font-weight:700;color:var(--on-accent);cursor:pointer;">Semanal</div>
       <div id="fp-btn-dia" onclick="fpSetVista('dia')" style="padding:6px 14px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;">Diario</div>
       <div onclick="fpConfigurar()" style="padding:6px 14px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;">⚙ Saldo inicial</div>
     </div>
@@ -828,7 +830,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
     <input type="date" id="fp-desde" style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:5px 10px;color:var(--text);font-size:12px;">
     <span style="font-size:11px;color:var(--text3);">hasta:</span>
     <input type="date" id="fp-hasta" style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:5px 10px;color:var(--text);font-size:12px;">
-    <div onclick="fpAplicarRango()" style="padding:5px 14px;background:var(--green);border-radius:var(--radius-sm);font-size:12px;font-weight:700;color:#000;cursor:pointer;">Aplicar</div>
+    <div onclick="fpAplicarRango()" style="padding:5px 14px;background:var(--accent);border-radius:var(--radius-sm);font-size:12px;font-weight:700;color:var(--on-accent);cursor:pointer;">Aplicar</div>
     <div onclick="fpResetRango()" style="padding:5px 14px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);font-size:12px;color:var(--text2);cursor:pointer;">Ver todo el año</div>
   </div>
 
@@ -840,7 +842,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
       <input id="fp-saldo-input" type="number" placeholder="Ej: 22000" style="width:100%;padding:10px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:14px;box-sizing:border-box;margin-bottom:14px;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
         <div onclick="fpCerrarModal()" style="padding:10px;background:var(--bg3);border-radius:var(--radius-sm);font-size:13px;font-weight:600;color:var(--text2);text-align:center;cursor:pointer;">Cancelar</div>
-        <div onclick="fpGuardarSaldo()" style="padding:10px;background:var(--green);border-radius:var(--radius-sm);font-size:13px;font-weight:700;color:#000;text-align:center;cursor:pointer;">Guardar</div>
+        <div onclick="fpGuardarSaldo()" style="padding:10px;background:var(--accent);border-radius:var(--radius-sm);font-size:13px;font-weight:700;color:var(--on-accent);text-align:center;cursor:pointer;">Guardar</div>
       </div>
     </div>
   </div>
@@ -879,7 +881,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
         onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();enviarConsulta();}">
       </textarea>
       <div onclick="enviarConsulta()" id="chat-send-btn"
-        style="width:44px;height:44px;border-radius:50%;background:var(--green);color:#000;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;flex-shrink:0;transition:opacity 0.15s;">
+        style="width:44px;height:44px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;flex-shrink:0;transition:opacity 0.15s;">
         ↑
       </div>
     </div>
@@ -908,7 +910,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
     </div>
 
     <!-- BOTÓN NUEVA DEUDA -->
-    <div onclick="mostrarFormDeuda()" style="padding:13px;background:var(--green);border-radius:var(--radius-sm);font-size:13px;font-weight:700;color:#000;text-align:center;cursor:pointer;margin-bottom:16px;">+ Registrar nueva deuda</div>
+    <div onclick="mostrarFormDeuda()" style="padding:13px;background:var(--accent);border-radius:var(--radius-sm);font-size:13px;font-weight:700;color:var(--on-accent);text-align:center;cursor:pointer;margin-bottom:16px;">+ Registrar nueva deuda</div>
 
     <!-- FORMULARIO NUEVA DEUDA (oculto por defecto) -->
     <div id="form-deuda" style="display:none;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:16px;margin-bottom:16px;">
@@ -965,7 +967,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div onclick="cancelarFormDeuda()" style="padding:11px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;font-weight:600;color:var(--text2);text-align:center;cursor:pointer;">Cancelar</div>
-        <div onclick="guardarDeuda()" style="padding:11px;background:var(--green);border-radius:var(--radius-sm);font-size:13px;font-weight:700;color:#000;text-align:center;cursor:pointer;">Guardar</div>
+        <div onclick="guardarDeuda()" style="padding:11px;background:var(--accent);border-radius:var(--radius-sm);font-size:13px;font-weight:700;color:var(--on-accent);text-align:center;cursor:pointer;">Guardar</div>
       </div>
     </div>
 
@@ -985,7 +987,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
       <div id="cfg-metas-list"></div>
       <div style="display:flex;gap:8px;margin-top:12px;">
         <div style="flex:1;padding:11px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;font-weight:600;color:var(--text2);text-align:center;cursor:pointer;" onclick="syncMetas()">🔄 Sincronizar</div>
-        <div style="flex:1;padding:11px;background:var(--green);border-radius:var(--radius-sm);font-size:13px;font-weight:700;color:#000;text-align:center;cursor:pointer;" onclick="guardarMetas()">💾 Guardar</div>
+        <div style="flex:1;padding:11px;background:var(--accent);border-radius:var(--radius-sm);font-size:13px;font-weight:700;color:var(--on-accent);text-align:center;cursor:pointer;" onclick="guardarMetas()">💾 Guardar</div>
       </div>
     </div>
 
@@ -1091,14 +1093,14 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
 // ═══════════════════════════════════════════════════════
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHmujABPWmwpOPDhMOeH2D7Wu9eH4QfE45no6m-Ed3WcH7PYmuJ1pWdEAXQCa9nVmM/exec';
 
-const CARTERAS_CASH = ['BANAMEX DEBITO','BAJIO DEBITO','FACIL','EFECTIVO','BBVA DEBITO','EFECTIVO SOFI'];
+const CARTERAS_CASH = ['BANAMEX DEBITO','BAJIO DEBITO','FACIL','EFECTIVO','REVOLUT','BBVA DEBITO','EFECTIVO SOFI'];
 const CARTERAS_EMPRESA = ['T. CARTONOMICO']; // Excluidas del dashboard personal
 const CARTERAS_TDC  = ['T. COSTCO','T. PLATINUM','AMEX','T. BBVA','T. INVEX','T. PALACIO','T. CARTONOMICO'];
 const CARTERAS = [...CARTERAS_CASH,...CARTERAS_TDC];
 
 // Fecha de corte: último día del ciclo que entra al pago del 24 del MISMO mes
 // Si operación > diaCorte → pago el 24 del mes SIGUIENTE
-const TDC_CORTE = {'T. COSTCO':25,'T. PLATINUM':12,'AMEX':11,'T. BBVA':6,'T. INVEX':26,'T. PALACIO':26,'T. CARTONOMICO':26};
+const TDC_CORTE = {'T. COSTCO':24,'T. PLATINUM':12,'AMEX':11,'T. BBVA':6,'T. INVEX':26,'T. PALACIO':26,'T. CARTONOMICO':26};
 const DIA_PAGO = 24;
 
 const CAT_GASTO   = ['RENTA','LUZ','AGUA','GAS','INTERNET','GASOLINA RAV4','GASOLINA JAC','CELULAR','COMIDA','SUSCRIPCIONES','SEGUROS','SALUD-FARMACIA-CONSULTAS MEDICAS','MUCHACHA','SUPER','TRANSPORTE','VEHICULO','ROPA Y ACCESORIOS','TINTORERIA Y RENTA VESTUARIO','REGALOS','ESTACIONAMIENTO','VIAJE','COMISIONES-FINANCIEROS','MEJORAS CASA','ENTRETENIMIENTO','BELLEZA Y SPA','CREDITO AAC','PROPINAS','EDUCACION','PAGO A DEUDA','OTROS','MESES SIN INTERESES'];
@@ -1238,8 +1240,7 @@ function calcFechaFlujo(fechaStr, cartera) {
   }
 
   const mesStr = String(mesPago + 1).padStart(2, '0');
-  const resultado = `${String(DIA_PAGO).padStart(2,'0')}/${mesStr}/${anioPago}`;
-  console.log(`FECHA FLUJO DEBUG → fecha:${fechaStr} cartera:${cartera} corte:${corte} diaOp:${diaOp} mesPago:${mesPago+1} resultado:${resultado}`);
+  const resultado = `${anioPago}-${mesStr}-${String(DIA_PAGO).padStart(2,'0')}`;
   return resultado;
 }
 
@@ -1790,7 +1791,10 @@ function actualizarRegistro() {
   r.monto     = r.monto < 0 ? -Math.abs(nm) : Math.abs(nm);
   const isTransfer = r.tipo === 'TRANSFERENCIA' || r.tipo === 'INGRESO POR TRANSFERENCIA';
   if (!isTransfer) r.categoria = document.getElementById('m-categoria').value;
-  fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'updateRow', id: r.id, data: r }) }).catch(() => {});
+  fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'updateRow', id: r.id, data: r }) })
+    .then(res => res.json())
+    .then(data => { if (!data || !data.ok) showToast('⚠️ El cambio no se guardó en Sheets', 'error'); })
+    .catch(() => showToast('⚠️ Sin conexión: el cambio no llegó a Sheets', 'error'));
   saveLocal(); closeModalDirect(); renderRecords(); renderDashboard();
   showToast('Registro actualizado ✓', 'success');
 }
@@ -1998,7 +2002,7 @@ function showToast(msg, type) { const t = document.getElementById('toast'); t.te
 // ══════════════════════════════════════════
 // DASHBOARD ANALYTICS
 // ══════════════════════════════════════════
-const CHART_COLORS = ['#00e096','#4da6ff','#ffb547','#ff5050','#a855f7','#06b6d4','#f97316','#ec4899','#84cc16','#14b8a6'];
+const CHART_COLORS = ['#2C7A3F','#378ADD','#E8A33D','#B03A3A','#8B5CF6','#0891B2','#EA7317','#DB2777','#65A30D','#0D9488'];
 let trendChart = null, donutGasChart = null, donutIngChart = null, presupChart = null;
 
 // RANGO STATE
@@ -2140,16 +2144,16 @@ function renderTrendChart12() {
     data: {
       labels,
       datasets: [
-        { label: 'Ingresos', data: ingData, backgroundColor: 'rgba(0,224,150,0.75)', borderRadius: 3, barPercentage: 0.55 },
-        { label: 'Gastos',   data: gasData, backgroundColor: 'rgba(255,80,80,0.7)',  borderRadius: 3, barPercentage: 0.55 }
+        { label: 'Ingresos', data: ingData, backgroundColor: 'rgba(44,122,63,0.75)', borderRadius: 3, barPercentage: 0.55 },
+        { label: 'Gastos',   data: gasData, backgroundColor: 'rgba(176,58,58,0.7)',  borderRadius: 3, barPercentage: 0.55 }
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' $' + (c.raw/1000).toFixed(0) + 'k' } } },
       scales: {
-        x: { ticks: { color: '#7e7e94', font: { size: 10 }, maxRotation: 0 }, grid: { display: false } },
-        y: { suggestedMax, ticks: { color: '#7e7e94', font: { size: 10 }, callback: v => '$' + (v/1000).toFixed(0) + 'k', maxTicksLimit: 5 }, grid: { color: 'rgba(255,255,255,0.04)' } }
+        x: { ticks: { color: '#5B7290', font: { size: 10 }, maxRotation: 0 }, grid: { display: false } },
+        y: { suggestedMax, ticks: { color: '#5B7290', font: { size: 10 }, callback: v => '$' + (v/1000).toFixed(0) + 'k', maxTicksLimit: 5 }, grid: { color: 'rgba(22,48,79,0.08)' } }
       },
       interaction: { intersect: false, mode: 'index' }
     }
@@ -2250,16 +2254,16 @@ function renderPresupuestoChart(recs) {
     data: {
       labels: cats.map(x => x.cat.length > 12 ? x.cat.substring(0,12)+'…' : x.cat),
       datasets: [
-        { label: 'Real',        data: cats.map(x => Math.round(x.real)),   backgroundColor: cats.map(x => x.real > x.presup ? 'rgba(255,80,80,0.8)' : 'rgba(77,166,255,0.8)'), borderRadius: 4 },
-        { label: 'Presupuesto', data: cats.map(x => Math.round(x.presup)), backgroundColor: 'rgba(0,224,150,0.35)', borderRadius: 4 }
+        { label: 'Real',        data: cats.map(x => Math.round(x.real)),   backgroundColor: cats.map(x => x.real > x.presup ? 'rgba(176,58,58,0.8)' : 'rgba(55,138,221,0.8)'), borderRadius: 4 },
+        { label: 'Presupuesto', data: cats.map(x => Math.round(x.presup)), backgroundColor: 'rgba(44,122,63,0.35)', borderRadius: 4 }
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: true, labels: { color: '#7e7e94', font: { size: 11 }, boxWidth: 12 } }, tooltip: { callbacks: { label: c => ' $' + (c.raw/1000).toFixed(1) + 'k' } } },
+      plugins: { legend: { display: true, labels: { color: '#5B7290', font: { size: 11 }, boxWidth: 12 } }, tooltip: { callbacks: { label: c => ' $' + (c.raw/1000).toFixed(1) + 'k' } } },
       scales: {
-        x: { ticks: { color: '#7e7e94', font: { size: 10 }, maxRotation: 30 }, grid: { display: false } },
-        y: { ticks: { color: '#7e7e94', font: { size: 10 }, callback: v => '$' + (v/1000).toFixed(0) + 'k', maxTicksLimit: 5 }, grid: { color: 'rgba(255,255,255,0.04)' } }
+        x: { ticks: { color: '#5B7290', font: { size: 10 }, maxRotation: 30 }, grid: { display: false } },
+        y: { ticks: { color: '#5B7290', font: { size: 10 }, callback: v => '$' + (v/1000).toFixed(0) + 'k', maxTicksLimit: 5 }, grid: { color: 'rgba(22,48,79,0.08)' } }
       },
       interaction: { intersect: false, mode: 'index' }
     }
@@ -2483,8 +2487,8 @@ function agregarMensaje(rol, texto) {
   div.style.cssText = `display:flex;justify-content:${esUser?'flex-end':'flex-start'};`;
   div.innerHTML = `
     <div style="max-width:85%;padding:12px 14px;border-radius:${esUser?'16px 16px 4px 16px':'16px 16px 16px 4px'};
-      background:${esUser?'var(--green)':'var(--bg2)'};
-      color:${esUser?'#000':'var(--text)'};
+      background:${esUser?'var(--accent)':'var(--bg2)'};
+      color:${esUser?'var(--on-accent)':'var(--text)'};
       border:${esUser?'none':'0.5px solid var(--border2)'};
       font-size:13px;line-height:1.6;white-space:pre-wrap;font-family:var(--font);">
       ${texto.replace(/</g,'&lt;').replace(/>/g,'&gt;')}
@@ -3070,7 +3074,7 @@ let fpSaldoInicial = 0;
 let fpDesde = null;
 let fpHasta = null;
 
-const FP_CARTERAS_CASH = ['BANAMEX DEBITO','BAJIO DEBITO','FACIL','EFECTIVO','BBVA DEBITO','EFECTIVO SOFI'];
+const FP_CARTERAS_CASH = ['BANAMEX DEBITO','BAJIO DEBITO','FACIL','EFECTIVO','REVOLUT','BBVA DEBITO','EFECTIVO SOFI'];
 const FP_TDCS = [
   { nombre: 'T. COSTCO', diaPago: 14, diaCorte: 24 },
   { nombre: 'T. PLATINUM', diaPago: 30, diaCorte: 12 },
@@ -3111,8 +3115,8 @@ function fpSetVista(v) {
     const btn = document.getElementById(`fp-btn-${x}`);
     if (!btn) return;
     const active = (x === 'sem' && v === 'semana') || (x === 'dia' && v === 'dia');
-    btn.style.background = active ? 'var(--green)' : 'var(--bg2)';
-    btn.style.color = active ? '#000' : 'var(--text2)';
+    btn.style.background = active ? 'var(--accent)' : 'var(--bg2)';
+    btn.style.color = active ? 'var(--on-accent)' : 'var(--text2)';
   });
   fpRender();
 }
