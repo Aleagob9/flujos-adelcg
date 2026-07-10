@@ -3194,7 +3194,7 @@ function fpGetRegistrosCash() {
   allRecords.forEach(r => {
     const fecha = (r.fecha || r['FECHA OPERACIÓN'] || '').substring(0, 10);
     if (!fecha) return;
-    if (!mapa[fecha]) mapa[fecha] = { ing: {}, gas: {} };
+    if (!mapa[fecha]) mapa[fecha] = { ing: {}, gas: {}, neto: 0 };
 
     const monto = Math.abs(parseFloat(r.monto) || 0);
     const cat = r.categoria || 'OTROS';
@@ -3205,6 +3205,10 @@ function fpGetRegistrosCash() {
     const esCashOrigen = FP_CARTERAS_CASH.includes(cartera);
     const esTDCDestino = FP_TDCS.some(t => t.nombre === carteraDest);
     const esCashDestino = FP_CARTERAS_CASH.includes(carteraDest);
+
+    // Efecto neto REAL sobre las cuentas cash (mismo método que el Resumen).
+    // Este valor gobierna el SALDO ACUMULADO del pasado; los mapas ing/gas son solo desglose visual.
+    if (esCashOrigen) mapa[fecha].neto += (parseFloat(r.monto) || 0);
 
     // Ingresos a cash: INGRESO directo + ENTRADA EXTERNA + INGRESO POR TRANSFERENCIA entre cuentas cash
     if (tipo === 'INGRESO' && esCashOrigen) {
@@ -3367,8 +3371,8 @@ function fpBuildTabla(cols, today, esSemana) {
       const esPasado = f <= today;
       let ing = 0, gas = 0;
       if (esPasado) {
-        Object.values(reg.ing || {}).forEach(v => ing += v);
-        Object.values(reg.gas || {}).forEach(v => gas += v);
+        saldo += (reg.neto || 0); // efecto real, idéntico al Resumen
+        return;
       } else {
         FP_CATS_ING.forEach(c => { ing += edits['ing_'+c] || 0; });
         FP_CATS_FIJO.forEach(c => { gas += edits['fijo_'+c] !== undefined ? edits['fijo_'+c] : (fijos[c] || 0); });
@@ -3390,6 +3394,7 @@ function fpBuildTabla(cols, today, esSemana) {
     const gasVarPorCat = {};
     const gasTDCPorCat = {};
     const gasDeudaPorCat = {};
+    let netoPasado = 0, futIng = 0, futGas = 0;
 
     fechas.forEach(f => {
       const reg = registros[f] || {};
@@ -3406,12 +3411,13 @@ function fpBuildTabla(cols, today, esSemana) {
         FP_CATS_VAR.forEach(c => { if (reg.gas?.[c]) gasVarPorCat[c] = (gasVarPorCat[c]||0) + reg.gas[c]; });
         FP_TDCS.forEach(t => { if (reg.gas?.[t.nombre]) gasTDCPorCat[t.nombre] = (gasTDCPorCat[t.nombre]||0) + reg.gas[t.nombre]; });
         FP_CATS_DEUDA.forEach(c => { if (reg.gas?.[c]) gasDeudaPorCat[c] = (gasDeudaPorCat[c]||0) + reg.gas[c]; });
+        netoPasado += (reg.neto || 0); // el saldo del pasado usa el efecto real
       } else {
-        FP_CATS_ING.forEach(c => { const v = edits['ing_'+c]||0; if(v) ingPorCat[c]=(ingPorCat[c]||0)+v; });
-        FP_CATS_FIJO.forEach(c => { const v = edits['fijo_'+c]!==undefined ? edits['fijo_'+c] : (fijos[c]||0); if(v) gasFijoPorCat[c]=(gasFijoPorCat[c]||0)+v; });
-        FP_CATS_VAR.forEach(c => { const v = edits['var_'+c]||0; if(v) gasVarPorCat[c]=(gasVarPorCat[c]||0)+v; });
-        FP_TDCS.forEach(t => { const v = edits['tdc_'+t.nombre]!==undefined ? edits['tdc_'+t.nombre] : (tdc[t.nombre]||0); if(v) gasTDCPorCat[t.nombre]=(gasTDCPorCat[t.nombre]||0)+v; });
-        FP_CATS_DEUDA.forEach(c => { const v = edits['deuda_'+c]||0; if(v) gasDeudaPorCat[c]=(gasDeudaPorCat[c]||0)+v; });
+        FP_CATS_ING.forEach(c => { const v = edits['ing_'+c]||0; if(v){ ingPorCat[c]=(ingPorCat[c]||0)+v; futIng += v; } });
+        FP_CATS_FIJO.forEach(c => { const v = edits['fijo_'+c]!==undefined ? edits['fijo_'+c] : (fijos[c]||0); if(v){ gasFijoPorCat[c]=(gasFijoPorCat[c]||0)+v; futGas += v; } });
+        FP_CATS_VAR.forEach(c => { const v = edits['var_'+c]||0; if(v){ gasVarPorCat[c]=(gasVarPorCat[c]||0)+v; futGas += v; } });
+        FP_TDCS.forEach(t => { const v = edits['tdc_'+t.nombre]!==undefined ? edits['tdc_'+t.nombre] : (tdc[t.nombre]||0); if(v){ gasTDCPorCat[t.nombre]=(gasTDCPorCat[t.nombre]||0)+v; futGas += v; } });
+        FP_CATS_DEUDA.forEach(c => { const v = edits['deuda_'+c]||0; if(v){ gasDeudaPorCat[c]=(gasDeudaPorCat[c]||0)+v; futGas += v; } });
       }
     });
 
@@ -3420,7 +3426,7 @@ function fpBuildTabla(cols, today, esSemana) {
     const totalVar = Object.values(gasVarPorCat).reduce((a,b)=>a+b,0);
     const totalTDC = Object.values(gasTDCPorCat).reduce((a,b)=>a+b,0);
     const totalDeuda = Object.values(gasDeudaPorCat).reduce((a,b)=>a+b,0);
-    saldo += totalIng - totalFijo - totalVar - totalTDC - totalDeuda;
+    saldo += netoPasado + futIng - futGas; // pasado: efecto real; futuro: proyección
 
     data.push({ label: col.label, fechas, esPasadoCol, esHoyCol, ingPorCat, gasFijoPorCat, gasVarPorCat, gasTDCPorCat, gasDeudaPorCat, totalIng, totalFijo, totalVar, totalTDC, totalDeuda, saldo, esSemana });
   });
