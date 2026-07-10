@@ -820,7 +820,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
       <div id="fp-btn-sem" onclick="fpSetVista('semana')" style="padding:6px 14px;background:var(--accent);border-radius:var(--radius-sm);font-size:12px;font-weight:700;color:var(--on-accent);cursor:pointer;">Semanal</div>
       <div id="fp-btn-dia" onclick="fpSetVista('dia')" style="padding:6px 14px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;">Diario</div>
-      <div onclick="fpConfigurar()" style="padding:6px 14px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;">⚙ Saldo inicial</div>
+      <div onclick="fpConfigurar()" style="padding:6px 14px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;">ℹ️ Saldo inicial</div>
     </div>
   </div>
 
@@ -837,13 +837,11 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   <!-- Modal saldo inicial -->
   <div id="fp-modal-saldo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:center;justify-content:center;">
     <div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:24px;width:320px;max-width:90vw;">
-      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:16px;">Saldo Cash Inicial</div>
-      <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">Saldo total de tus carteras cash hoy. Debe cuadrar con lo que ves en Resumen.</div>
-      <input id="fp-saldo-input" type="number" placeholder="Ej: 22000" style="width:100%;padding:10px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:14px;box-sizing:border-box;margin-bottom:14px;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <div onclick="fpCerrarModal()" style="padding:10px;background:var(--bg3);border-radius:var(--radius-sm);font-size:13px;font-weight:600;color:var(--text2);text-align:center;cursor:pointer;">Cancelar</div>
-        <div onclick="fpGuardarSaldo()" style="padding:10px;background:var(--accent);border-radius:var(--radius-sm);font-size:13px;font-weight:700;color:var(--on-accent);text-align:center;cursor:pointer;">Guardar</div>
-      </div>
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:16px;">Saldo inicial automático</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">El saldo inicial ya no se captura a mano: se calcula solo, con los saldos reales de tus cuentas cash y todos sus movimientos.</div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="font-size:12px;color:var(--text2);">Saldo al 1 de enero</span><span id="fp-saldo-enero" style="font-size:13px;font-weight:700;font-family:var(--display);color:var(--text);"></span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:16px;"><span style="font-size:12px;color:var(--text2);">Saldo cash hoy</span><span id="fp-saldo-hoy" style="font-size:13px;font-weight:700;font-family:var(--display);color:var(--text);"></span></div>
+      <div onclick="fpCerrarModal()" style="padding:10px;background:var(--accent);border-radius:var(--radius-sm);font-size:13px;font-weight:700;color:var(--on-accent);text-align:center;cursor:pointer;">Entendido</div>
     </div>
   </div>
 
@@ -1093,14 +1091,14 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
 // ═══════════════════════════════════════════════════════
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHmujABPWmwpOPDhMOeH2D7Wu9eH4QfE45no6m-Ed3WcH7PYmuJ1pWdEAXQCa9nVmM/exec';
 
-const CARTERAS_CASH = ['BANAMEX DEBITO','BAJIO DEBITO','FACIL','EFECTIVO','REVOLUT','BBVA DEBITO','EFECTIVO SOFI'];
-const CARTERAS_EMPRESA = ['T. CARTONOMICO']; // Excluidas del dashboard personal
-const CARTERAS_TDC  = ['T. COSTCO','T. PLATINUM','AMEX','T. BBVA','T. INVEX','T. PALACIO','T. CARTONOMICO'];
-const CARTERAS = [...CARTERAS_CASH,...CARTERAS_TDC];
+let CARTERAS_CASH = ['BANAMEX DEBITO','BAJIO DEBITO','FACIL','EFECTIVO','REVOLUT','BBVA DEBITO','EFECTIVO SOFI']; // fallback: se reconstruye desde la hoja CARTERAS
+let CARTERAS_EMPRESA = ['T. CARTONOMICO']; // Excluidas del dashboard personal (dinámico: columna EMPRESA)
+let CARTERAS_TDC  = ['T. COSTCO','T. PLATINUM','AMEX','T. BBVA','T. INVEX','T. PALACIO','T. CARTONOMICO'];
+let CARTERAS = [...CARTERAS_CASH,...CARTERAS_TDC];
 
 // Fecha de corte: último día del ciclo que entra al pago del 24 del MISMO mes
 // Si operación > diaCorte → pago el 24 del mes SIGUIENTE
-const TDC_CORTE = {'T. COSTCO':24,'T. PLATINUM':12,'AMEX':11,'T. BBVA':6,'T. INVEX':26,'T. PALACIO':26,'T. CARTONOMICO':26};
+let TDC_CORTE = {'T. COSTCO':24,'T. PLATINUM':12,'AMEX':11,'T. BBVA':6,'T. INVEX':26,'T. PALACIO':26,'T. CARTONOMICO':26};
 const DIA_PAGO = 24;
 
 const CAT_GASTO   = ['RENTA','LUZ','AGUA','GAS','INTERNET','GASOLINA RAV4','GASOLINA JAC','CELULAR','COMIDA','SUSCRIPCIONES','SEGUROS','SALUD-FARMACIA-CONSULTAS MEDICAS','MUCHACHA','SUPER','TRANSPORTE','VEHICULO','ROPA Y ACCESORIOS','TINTORERIA Y RENTA VESTUARIO','REGALOS','ESTACIONAMIENTO','VIAJE','COMISIONES-FINANCIEROS','MEJORAS CASA','ENTRETENIMIENTO','BELLEZA Y SPA','CREDITO AAC','PROPINAS','EDUCACION','PAGO A DEUDA','OTROS','MESES SIN INTERESES'];
@@ -1117,6 +1115,38 @@ let dashCutoffDate = new Date().toISOString().split('T')[0];
 let collapsedRecGroups = {};
 let datePickerPreset = 'today';
 let carterasConfig = [];
+
+// ── CARTERAS DINÁMICAS: reconstruir listas desde la hoja CARTERAS ──
+let carterasFirma = '';
+function rebuildCarteras() {
+  if (!carterasConfig || !carterasConfig.length) return;
+  const cfgs = carterasConfig.filter(c => c && c.cartera);
+  const cash = cfgs.filter(c => String(c.tipo || '').toUpperCase() === 'CASH').map(c => c.cartera);
+  const tdc  = cfgs.filter(c => String(c.tipo || '').toUpperCase() === 'TDC').map(c => c.cartera);
+  if (!cash.length || !tdc.length) return; // datos incompletos: conservar listas actuales
+  const firma = JSON.stringify(cfgs.map(c => [c.cartera, c.tipo, c.diaCorte, c.diaPago, c.empresa]));
+  if (firma === carterasFirma) return; // sin cambios, no tocar la UI
+  carterasFirma = firma;
+  CARTERAS_CASH = cash;
+  CARTERAS_TDC = tdc;
+  CARTERAS_EMPRESA = cfgs.filter(c => c.empresa === true).map(c => c.cartera);
+  CARTERAS = [...CARTERAS_CASH, ...CARTERAS_TDC];
+  TDC_CORTE = {};
+  cfgs.forEach(c => { if (String(c.tipo || '').toUpperCase() === 'TDC') TDC_CORTE[c.cartera] = parseInt(c.diaCorte) || 1; });
+  FP_CARTERAS_CASH = CARTERAS_CASH.filter(c => !CARTERAS_EMPRESA.includes(c));
+  FP_TDCS = cfgs
+    .filter(c => String(c.tipo || '').toUpperCase() === 'TDC' && c.empresa !== true && (parseInt(c.diaCorte) || 0) > 0 && (parseInt(c.diaPago) || 0) > 0)
+    .map(c => ({ nombre: c.cartera, diaPago: parseInt(c.diaPago), diaCorte: parseInt(c.diaCorte) }));
+  rebuildCarteraSelect();
+}
+function rebuildCarteraSelect() {
+  const mc = document.getElementById('m-cartera');
+  if (!mc) return;
+  const cur = mc.value;
+  mc.innerHTML = '';
+  CARTERAS.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; mc.appendChild(o); });
+  if (CARTERAS.includes(cur)) mc.value = cur;
+}
 let metasConfig = []; // {categoria, presupuesto}
 
 // INIT
@@ -1157,7 +1187,7 @@ function showPage(p) {
   if (p === 'dash') { renderDashboard(); if(privacyOn) setTimeout(togglePrivacy,10) && setTimeout(togglePrivacy,10); }
   if (p === 'cfg') renderConfigPage();
   if (p === 'proy') renderDashboardAnalytics();
-  if (p === 'flujo') { fpSaldoInicial = parseFloat(localStorage.getItem('fp_saldo_inicial') || '0'); fpRender(); }
+  if (p === 'flujo') { fpRender(); }
   if (p === 'chat') { document.getElementById('chat-input')?.focus(); }
   if (p === 'deudas') renderDeudas();
   if (p === 'form') mostrarOcultarDeudaEnForm();
@@ -1833,6 +1863,7 @@ function loadRecords() {
   try { allRecords = JSON.parse(localStorage.getItem('flujos_records') || '[]'); } catch(e) { allRecords = []; }
   try { carterasConfig = JSON.parse(localStorage.getItem('flujos_carteras') || '[]'); } catch(e) { carterasConfig = []; }
   try { metasConfig = JSON.parse(localStorage.getItem('flujos_metas') || '[]'); } catch(e) { metasConfig = []; }
+  rebuildCarteras();
   renderDashboard();
 
   showToast('Sincronizando...', '');
@@ -1845,6 +1876,7 @@ function loadRecords() {
       if (data.carteras && data.carteras.length) {
         carterasConfig = data.carteras;
         localStorage.setItem('flujos_carteras', JSON.stringify(carterasConfig));
+        rebuildCarteras();
       }
       // Cargar metas/presupuestos
       if (data.metas && data.metas.length) {
@@ -2619,6 +2651,7 @@ function syncCarteras() {
       if (data.carteras && data.carteras.length) {
         carterasConfig = data.carteras;
         localStorage.setItem('flujos_carteras', JSON.stringify(carterasConfig));
+        rebuildCarteras();
         renderConfigPage();
         renderDashboard();
         showToast('Carteras sincronizadas ✓', 'success');
@@ -3074,8 +3107,8 @@ let fpSaldoInicial = 0;
 let fpDesde = null;
 let fpHasta = null;
 
-const FP_CARTERAS_CASH = ['BANAMEX DEBITO','BAJIO DEBITO','FACIL','EFECTIVO','REVOLUT','BBVA DEBITO','EFECTIVO SOFI'];
-const FP_TDCS = [
+let FP_CARTERAS_CASH = ['BANAMEX DEBITO','BAJIO DEBITO','FACIL','EFECTIVO','REVOLUT','BBVA DEBITO','EFECTIVO SOFI']; // fallback dinámico
+let FP_TDCS = [
   { nombre: 'T. COSTCO', diaPago: 14, diaCorte: 24 },
   { nombre: 'T. PLATINUM', diaPago: 30, diaCorte: 12 },
   { nombre: 'AMEX', diaPago: 30, diaCorte: 11 },
@@ -3087,6 +3120,23 @@ const FP_CATS_ING = ['CARTONOMICO FISCAL','CARTONOMICO NO FISCAL','BONO','SUELDO
 const FP_CATS_FIJO = ['RENTA','MUCHACHA','EDUCACION'];
 const FP_CATS_VAR = ['LUZ','AGUA','GAS','GASOLINA RAV4','GASOLINA JAC','CELULAR','COMIDA','SALUD-FARMACIA-CONSULTAS MEDICAS','SUPER','TRANSPORTE','VEHICULO','ROPA Y ACCESORIOS','TINTORERIA Y RENTA VESTUARIO','REGALOS','ESTACIONAMIENTO','VIAJE','COMISIONES-FINANCIEROS','MEJORAS CASA','ENTRETENIMIENTO','BELLEZA Y SPA','PROPINAS','OTROS'];
 const FP_CATS_DEUDA = ['CREDITO AAC','PAGO A DEUDA','MESES SIN INTERESES'];
+
+// ── FASE 1: SALDO INICIAL AUTOMÁTICO desde carteras cash reales ──
+function fpSaldoCashReal(hastaFecha) {
+  let saldo = 0;
+  FP_CARTERAS_CASH.forEach(c => saldo += getSaldoInicial(c));
+  allRecords.forEach(r => {
+    if (!FP_CARTERAS_CASH.includes(r.cartera)) return;
+    const f = String(r.fecha || '').substring(0, 10);
+    if (!f || f > hastaFecha) return;
+    saldo += parseFloat(r.monto) || 0;
+  });
+  return saldo;
+}
+function fpCalcSaldoInicialAuto() {
+  const year = new Date().getFullYear();
+  return fpSaldoCashReal((year - 1) + '-12-31');
+}
 
 function fpFecha(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function fpFmt(n) { return '$' + Math.abs(n).toLocaleString('es-MX',{minimumFractionDigits:0,maximumFractionDigits:0}); }
@@ -3100,15 +3150,14 @@ function fpGetDiasAnio() {
 }
 
 function fpConfigurar() {
+  const fMoney = v => (v < 0 ? '-$' : '$') + fmtN(v);
+  document.getElementById('fp-saldo-enero').textContent = fMoney(fpCalcSaldoInicialAuto());
+  const hoy = new Date();
+  const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+  document.getElementById('fp-saldo-hoy').textContent = fMoney(fpSaldoCashReal(hoyStr));
   document.getElementById('fp-modal-saldo').style.display = 'flex';
-  document.getElementById('fp-saldo-input').value = fpSaldoInicial || '';
 }
 function fpCerrarModal() { document.getElementById('fp-modal-saldo').style.display = 'none'; }
-function fpGuardarSaldo() {
-  fpSaldoInicial = parseFloat(document.getElementById('fp-saldo-input').value) || 0;
-  localStorage.setItem('fp_saldo_inicial', fpSaldoInicial);
-  fpCerrarModal(); fpRender();
-}
 function fpSetVista(v) {
   fpVista = v;
   ['sem','dia'].forEach(x => {
@@ -3260,7 +3309,7 @@ function fpGetTDCProyectados() {
 }
 
 function fpRender() {
-  fpSaldoInicial = parseFloat(localStorage.getItem('fp_saldo_inicial') || '0');
+  fpSaldoInicial = fpCalcSaldoInicialAuto();
   const container = document.getElementById('fp-tabla-container');
   if (!container) return;
 
