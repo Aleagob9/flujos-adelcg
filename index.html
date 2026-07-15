@@ -2887,6 +2887,28 @@ async function descontarPagoDeDeuda(deudaId, monto) {
   }
 }
 
+// Saldo real calculado de una deuda: sin intereses se deriva del tiempo transcurrido
+function deudaSaldoCalc(d) {
+  const plazoTotal = parseInt(d.plazoMeses) || 0;
+  let mesesPagados = 0;
+  if (d.fechaInicio) {
+    const ini = new Date(String(d.fechaInicio).substring(0, 10) + 'T12:00:00');
+    if (!isNaN(ini)) {
+      const hoy = new Date();
+      mesesPagados = (hoy.getFullYear() - ini.getFullYear()) * 12 + (hoy.getMonth() - ini.getMonth());
+      mesesPagados = Math.max(0, mesesPagados);
+      if (plazoTotal > 0) mesesPagados = Math.min(mesesPagados, plazoTotal);
+    }
+  }
+  const sinInteres = !d.tasaInteres || parseFloat(d.tasaInteres) === 0;
+  const mensualidad = parseFloat(d.mensualidad) || 0;
+  const montoOriginal = parseFloat(d.montoOriginal) || 0;
+  const saldo = (sinInteres && mensualidad > 0 && montoOriginal > 0)
+    ? Math.max(0, montoOriginal - mesesPagados * mensualidad)
+    : (parseFloat(d.saldoActual) || 0);
+  return { saldo, mesesPagados, plazoTotal };
+}
+
 function renderDeudas() {
   const lista = document.getElementById('deudas-lista');
   if (!lista) return;
@@ -2894,7 +2916,7 @@ function renderDeudas() {
   const activas = deudas.filter(d => d.activa);
   let totalDeuda = 0;
   let totalMensual = 0;
-  activas.forEach(d => { totalDeuda += d.saldoActual; totalMensual += d.mensualidad; });
+  activas.forEach(d => { totalDeuda += deudaSaldoCalc(d).saldo; totalMensual += d.mensualidad; });
 
   const el = document.getElementById('deudas-total');
   const em = document.getElementById('deudas-mensual');
@@ -2907,10 +2929,12 @@ function renderDeudas() {
   }
 
   lista.innerHTML = activas.map(d => {
-    const pct = d.montoOriginal > 0 ? Math.round((1 - d.saldoActual / d.montoOriginal) * 100) : 0;
-    const mesesRestantes = d.mensualidad > 0 ? Math.ceil(d.saldoActual / d.mensualidad) : 0;
-    const mesesPagados = d.mesesPagados || 0;
-    const plazoTotal = d.plazoMeses || 0;
+    const calc = deudaSaldoCalc(d);
+    const saldoCalc = calc.saldo;
+    const mesesPagados = calc.mesesPagados;
+    const plazoTotal = calc.plazoTotal;
+    const pct = d.montoOriginal > 0 ? Math.round((1 - saldoCalc / d.montoOriginal) * 100) : 0;
+    const mesesRestantes = plazoTotal > 0 ? Math.max(0, plazoTotal - mesesPagados) : (d.mensualidad > 0 ? Math.ceil(saldoCalc / d.mensualidad) : 0);
     const progresoTexto = plazoTotal > 0 ? `${mesesPagados}/${plazoTotal} meses` : `${mesesRestantes} meses restantes`;
 
     const tipoLabel = {
@@ -2925,7 +2949,7 @@ function renderDeudas() {
     let desglosePago = '';
     if (d.tasaInteres > 0) {
       const tasaMensual = d.tasaInteres / 100 / 12;
-      const interes = d.saldoActual * tasaMensual;
+      const interes = saldoCalc * tasaMensual;
       const capital = Math.max(0, d.mensualidad - interes);
       desglosePago = `
       <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:8px;margin-bottom:8px;">
@@ -2945,8 +2969,8 @@ function renderDeudas() {
           <div style="font-size:11px;color:var(--text3);margin-top:2px;">${tipoLabel} · ${d.carteraPago}</div>
         </div>
         <div style="text-align:right;">
-          <div style="font-size:16px;font-weight:800;color:var(--red);">$${d.saldoActual.toLocaleString('es-MX',{minimumFractionDigits:2})}</div>
-          <div style="font-size:11px;color:var(--text3);">saldo actual</div>
+          <div style="font-size:16px;font-weight:800;color:var(--red);">$${saldoCalc.toLocaleString('es-MX',{minimumFractionDigits:2})}</div>
+          <div style="font-size:11px;color:var(--text3);">saldo ${(!d.tasaInteres || parseFloat(d.tasaInteres) === 0) ? 'calculado' : 'capturado'}</div>
         </div>
       </div>
 
@@ -3164,10 +3188,13 @@ function fpFecha(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart
 function fpFmt(n) { return '$' + Math.abs(n).toLocaleString('es-MX',{minimumFractionDigits:0,maximumFractionDigits:0}); }
 
 function fpGetDiasAnio() {
-  const year = new Date().getFullYear();
+  // Desde el 1 de enero del año actual hasta 12 meses después de hoy (horizonte rodante)
+  const hoy = new Date();
+  const year = hoy.getFullYear();
+  const fin = new Date(hoy); fin.setDate(fin.getDate() + 365);
   const days = [];
   const d = new Date(year, 0, 1);
-  while (d.getFullYear() === year) { days.push(new Date(d)); d.setDate(d.getDate() + 1); }
+  while (d <= fin) { days.push(new Date(d)); d.setDate(d.getDate() + 1); }
   return days;
 }
 
@@ -3225,7 +3252,7 @@ function fpGetRegistrosCash() {
     const carteraDest = r['CARTERA DESTINO'] || r.carteraDestino || '';
 
     const esCashOrigen = FP_CARTERAS_CASH.includes(cartera);
-    const esTDCDestino = FP_TDCS.some(t => t.nombre === carteraDest);
+    const esTDCDestino = CARTERAS_TDC.includes(carteraDest); // incluye tarjetas de empresa
     const esCashDestino = FP_CARTERAS_CASH.includes(carteraDest);
 
     // Efecto neto REAL sobre las cuentas cash (mismo método que el Resumen).
@@ -3271,7 +3298,7 @@ function fpGetFijosAuto() {
       const dow = DIAS_SEM[String(fj.dia).toUpperCase()];
       if (dow === undefined) return;
       const d = new Date(year, 0, 1);
-      while (d.getFullYear() === year) {
+      while (d.getFullYear() <= year + 1) {
         if (d.getDay() === dow) {
           const sig = new Date(d); sig.setDate(sig.getDate() + 7);
           const esUltimo = sig.getMonth() !== d.getMonth();
@@ -3284,9 +3311,9 @@ function fpGetFijosAuto() {
       }
     } else { // MENSUAL
       const diaN = parseInt(fj.dia) || 1;
-      for (let m = 0; m < 12; m++) {
-        const ultimoDia = new Date(year, m + 1, 0).getDate();
-        const f = `${year}-${String(m + 1).padStart(2, '0')}-${String(Math.min(diaN, ultimoDia)).padStart(2, '0')}`;
+      for (let y = year; y <= year + 1; y++) for (let m = 0; m < 12; m++) {
+        const ultimoDia = new Date(y, m + 1, 0).getDate();
+        const f = `${y}-${String(m + 1).padStart(2, '0')}-${String(Math.min(diaN, ultimoDia)).padStart(2, '0')}`;
         if (!mapa[f]) mapa[f] = {};
         mapa[f][fj.categoria] = (mapa[f][fj.categoria] || 0) + fj.monto;
       }
@@ -3306,7 +3333,7 @@ function fpGetIngresosAuto() {
       const dow = DIAS_SEM[String(fj.dia).toUpperCase()];
       if (dow === undefined) return;
       const d = new Date(year, 0, 1);
-      while (d.getFullYear() === year) {
+      while (d.getFullYear() <= year + 1) {
         if (d.getDay() === dow) {
           const sig = new Date(d); sig.setDate(sig.getDate() + 7);
           const esUltimo = sig.getMonth() !== d.getMonth();
@@ -3319,9 +3346,9 @@ function fpGetIngresosAuto() {
       }
     } else {
       const diaN = parseInt(fj.dia) || 1;
-      for (let m = 0; m < 12; m++) {
-        const ultimoDia = new Date(year, m + 1, 0).getDate();
-        const f = `${year}-${String(m + 1).padStart(2, '0')}-${String(Math.min(diaN, ultimoDia)).padStart(2, '0')}`;
+      for (let y = year; y <= year + 1; y++) for (let m = 0; m < 12; m++) {
+        const ultimoDia = new Date(y, m + 1, 0).getDate();
+        const f = `${y}-${String(m + 1).padStart(2, '0')}-${String(Math.min(diaN, ultimoDia)).padStart(2, '0')}`;
         if (!mapa[f]) mapa[f] = {};
         mapa[f][fj.categoria] = (mapa[f][fj.categoria] || 0) + fj.monto;
       }
@@ -3366,6 +3393,12 @@ function fpGetFijosAutoLegacy() {
   return mapa;
 }
 
+function fpTdcRowNames() {
+  const nombres = FP_TDCS.map(t => t.nombre);
+  CARTERAS_TDC.forEach(c => { if (CARTERAS_EMPRESA.includes(c) && !nombres.includes(c)) nombres.push(c); });
+  return nombres;
+}
+
 function fpGetTDCProyectados() {
   const pagos = {};
   const today = new Date(); today.setHours(0,0,0,0);
@@ -3389,17 +3422,71 @@ function fpGetTDCProyectados() {
       const key = `${anoPago}-${String(mesPago).padStart(2,'0')}`;
       gastosPorPeriodo[key] = (gastosPorPeriodo[key] || 0) + Math.abs(parseFloat(r.monto) || 0);
     });
+    // Pagos reales ya hechos a esta tarjeta (TRANSFERENCIA cash → tarjeta)
+    const pagosReales = [];
+    allRecords.forEach(r => {
+      if (r.tipo !== 'TRANSFERENCIA') return;
+      if ((r.carteraDestino || '') !== tdc.nombre) return;
+      if (!FP_CARTERAS_CASH.includes(r.cartera)) return;
+      const f = String(r.fecha || '').substring(0, 10);
+      if (f) pagosReales.push({ fecha: f, monto: Math.abs(parseFloat(r.monto) || 0) });
+    });
+    // MSI de la hoja DEUDAS: mensualidades restantes cargadas a esta tarjeta
+    (deudas || []).forEach(dd => {
+      if (!dd.activa) return;
+      if ((dd.carteraPago || '') !== tdc.nombre) return;
+      const mensualidad = parseFloat(dd.mensualidad) || 0;
+      const plazo = parseInt(dd.plazoMeses) || 0;
+      if (mensualidad <= 0 || plazo <= 0 || !dd.fechaInicio) return;
+      const ini = new Date(String(dd.fechaInicio).substring(0, 10) + 'T12:00:00');
+      if (isNaN(ini)) return;
+      const transcurridos = Math.max(0, (today.getFullYear() - ini.getFullYear()) * 12 + (today.getMonth() - ini.getMonth()));
+      const restantes = plazo - transcurridos;
+      if (restantes <= 0) return;
+      // Cada mensualidad restante cae en los próximos cortes que aún no ocurren
+      let anoC = today.getFullYear();
+      let mesC = today.getMonth() + 1; // 1-12
+      if (today.getDate() > tdc.diaCorte) { mesC++; if (mesC > 12) { mesC = 1; anoC++; } }
+      for (let k = 0; k < restantes && k < 24; k++) {
+        let mesPago = mesC + 1, anoPago = anoC;
+        if (mesPago > 12) { mesPago -= 12; anoPago++; }
+        const key = `${anoPago}-${String(mesPago).padStart(2, '0')}`;
+        gastosPorPeriodo[key] = (gastosPorPeriodo[key] || 0) + mensualidad;
+        mesC++; if (mesC > 12) { mesC = 1; anoC++; }
+      }
+    });
+
+    const manana = new Date(today); manana.setDate(manana.getDate() + 1);
+    const mananaStr = fpFecha(manana);
+    let vencidoTotal = 0, primerVencido = null;
     Object.entries(gastosPorPeriodo).forEach(([key, monto]) => {
       const [ano, mes] = key.split('-').map(Number);
-      if (ano !== year) return;
       const maxDia = new Date(ano, mes, 0).getDate();
       const diaPago = Math.min(tdc.diaPago, maxDia);
       const fechaPago = `${ano}-${String(mes).padStart(2,'0')}-${String(diaPago).padStart(2,'0')}`;
       const fPago = new Date(fechaPago + 'T12:00:00');
-      if (fPago <= today) return;
-      if (!pagos[fechaPago]) pagos[fechaPago] = {};
-      pagos[fechaPago][tdc.nombre] = (pagos[fechaPago][tdc.nombre] || 0) + monto;
+      if (fPago <= today) {
+        // Periodo con fecha de pago ya pasada: ver cuánto se pagó en realidad
+        vencidoTotal += monto;
+        if (!primerVencido || fechaPago < primerVencido) primerVencido = fechaPago;
+      } else {
+        if (!pagos[fechaPago]) pagos[fechaPago] = {};
+        pagos[fechaPago][tdc.nombre] = (pagos[fechaPago][tdc.nombre] || 0) + monto;
+      }
     });
+    if (vencidoTotal > 0 && primerVencido) {
+      // Restar los pagos reales desde 15 días antes del primer pago vencido
+      const desde = new Date(primerVencido + 'T12:00:00'); desde.setDate(desde.getDate() - 15);
+      const desdeStr = fpFecha(desde);
+      let pagado = 0;
+      pagosReales.forEach(p => { if (p.fecha >= desdeStr) pagado += p.monto; });
+      const residual = vencidoTotal - pagado;
+      if (residual > 1) {
+        // Pago pendiente (vencido): se muestra mañana hasta que se registre el pago real
+        if (!pagos[mananaStr]) pagos[mananaStr] = {};
+        pagos[mananaStr][tdc.nombre] = (pagos[mananaStr][tdc.nombre] || 0) + residual;
+      }
+    }
   });
   return pagos;
 }
@@ -3434,12 +3521,14 @@ function fpRender() {
 
 function fpLabelSem(sem) {
   const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  return `Sem ${fpFecha(sem[0]).substring(5,10).replace('-','/')}<br>${meses[sem[0].getMonth()]}`;
+  const y = sem[0].getFullYear() !== new Date().getFullYear() ? ` '${String(sem[0].getFullYear()).slice(2)}` : '';
+  return `Sem ${fpFecha(sem[0]).substring(5,10).replace('-','/')}<br>${meses[sem[0].getMonth()]}${y}`;
 }
 function fpLabelDia(d) {
   const ds = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
   const ms = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  return `${ds[d.getDay()]}<br>${d.getDate()} ${ms[d.getMonth()]}`;
+  const y = d.getFullYear() !== new Date().getFullYear() ? ` '${String(d.getFullYear()).slice(2)}` : '';
+  return `${ds[d.getDay()]}<br>${d.getDate()} ${ms[d.getMonth()]}${y}`;
 }
 
 function fpBuildTabla(cols, today, esSemana) {
@@ -3472,7 +3561,7 @@ function fpBuildTabla(cols, today, esSemana) {
         FP_CATS_ING.forEach(c => { ing += edits['ing_'+c] !== undefined ? edits['ing_'+c] : (ingA[c] || 0); });
         FP_CATS_FIJO.forEach(c => { gas += edits['fijo_'+c] !== undefined ? edits['fijo_'+c] : (fijos[c] || 0); });
         FP_CATS_VAR.forEach(c => { gas += edits['var_'+c] || 0; });
-        FP_TDCS.forEach(t => { gas += edits['tdc_'+t.nombre] !== undefined ? edits['tdc_'+t.nombre] : (tdc[t.nombre] || 0); });
+        fpTdcRowNames().forEach(n => { gas += edits['tdc_'+n] !== undefined ? edits['tdc_'+n] : (tdc[n] || 0); });
         FP_CATS_DEUDA.forEach(c => { gas += edits['deuda_'+c] || 0; });
       }
       saldo += ing - gas;
@@ -3505,14 +3594,14 @@ function fpBuildTabla(cols, today, esSemana) {
         Object.keys(reg.ing || {}).forEach(c => { if (!FP_CATS_ING.includes(c)) ingPorCat[c] = (ingPorCat[c]||0) + reg.ing[c]; });
         FP_CATS_FIJO.forEach(c => { if (reg.gas?.[c]) gasFijoPorCat[c] = (gasFijoPorCat[c]||0) + reg.gas[c]; });
         FP_CATS_VAR.forEach(c => { if (reg.gas?.[c]) gasVarPorCat[c] = (gasVarPorCat[c]||0) + reg.gas[c]; });
-        FP_TDCS.forEach(t => { if (reg.gas?.[t.nombre]) gasTDCPorCat[t.nombre] = (gasTDCPorCat[t.nombre]||0) + reg.gas[t.nombre]; });
+        fpTdcRowNames().forEach(n => { if (reg.gas?.[n]) gasTDCPorCat[n] = (gasTDCPorCat[n]||0) + reg.gas[n]; });
         FP_CATS_DEUDA.forEach(c => { if (reg.gas?.[c]) gasDeudaPorCat[c] = (gasDeudaPorCat[c]||0) + reg.gas[c]; });
         netoPasado += (reg.neto || 0); // el saldo del pasado usa el efecto real
       } else {
         FP_CATS_ING.forEach(c => { const v = edits['ing_'+c] !== undefined ? edits['ing_'+c] : (ingA[c] || 0); if(v){ ingPorCat[c]=(ingPorCat[c]||0)+v; futIng += v; } });
         FP_CATS_FIJO.forEach(c => { const v = edits['fijo_'+c]!==undefined ? edits['fijo_'+c] : (fijos[c]||0); if(v){ gasFijoPorCat[c]=(gasFijoPorCat[c]||0)+v; futGas += v; } });
         FP_CATS_VAR.forEach(c => { const v = edits['var_'+c]||0; if(v){ gasVarPorCat[c]=(gasVarPorCat[c]||0)+v; futGas += v; } });
-        FP_TDCS.forEach(t => { const v = edits['tdc_'+t.nombre]!==undefined ? edits['tdc_'+t.nombre] : (tdc[t.nombre]||0); if(v){ gasTDCPorCat[t.nombre]=(gasTDCPorCat[t.nombre]||0)+v; futGas += v; } });
+        fpTdcRowNames().forEach(n => { const v = edits['tdc_'+n]!==undefined ? edits['tdc_'+n] : (tdc[n]||0); if(v){ gasTDCPorCat[n]=(gasTDCPorCat[n]||0)+v; futGas += v; } });
         FP_CATS_DEUDA.forEach(c => { const v = edits['deuda_'+c]||0; if(v){ gasDeudaPorCat[c]=(gasDeudaPorCat[c]||0)+v; futGas += v; } });
       }
     });
@@ -3600,7 +3689,7 @@ function fpBuildTabla(cols, today, esSemana) {
 
   // PAGOS TDC
   h += secRow('tdc', '💳', 'PAGOS TARJETAS', 'totalTDC');
-  const tdcNames = FP_TDCS.map(t => t.nombre);
+  const tdcNames = fpTdcRowNames();
   h += catRows('tdc', tdcNames, 'gasTDCPorCat', 'tdc_', false);
 
   // PAGOS DEUDA
