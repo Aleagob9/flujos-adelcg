@@ -1115,6 +1115,7 @@ let dashCutoffDate = new Date().toISOString().split('T')[0];
 let collapsedRecGroups = {};
 let datePickerPreset = 'today';
 let carterasConfig = [];
+let fijosConfig = [];
 
 // ── CARTERAS DINÁMICAS: reconstruir listas desde la hoja CARTERAS ──
 let carterasFirma = '';
@@ -1863,6 +1864,7 @@ function loadRecords() {
   try { allRecords = JSON.parse(localStorage.getItem('flujos_records') || '[]'); } catch(e) { allRecords = []; }
   try { carterasConfig = JSON.parse(localStorage.getItem('flujos_carteras') || '[]'); } catch(e) { carterasConfig = []; }
   try { metasConfig = JSON.parse(localStorage.getItem('flujos_metas') || '[]'); } catch(e) { metasConfig = []; }
+  try { fijosConfig = JSON.parse(localStorage.getItem('flujos_fijos') || '[]'); } catch(e) { fijosConfig = []; }
   rebuildCarteras();
   renderDashboard();
 
@@ -1877,6 +1879,10 @@ function loadRecords() {
         carterasConfig = data.carteras;
         localStorage.setItem('flujos_carteras', JSON.stringify(carterasConfig));
         rebuildCarteras();
+      }
+      if (data.fijos) {
+        fijosConfig = data.fijos;
+        localStorage.setItem('flujos_fijos', JSON.stringify(fijosConfig));
       }
       // Cargar metas/presupuestos
       if (data.metas && data.metas.length) {
@@ -1983,6 +1989,8 @@ function autoSync() {
       const ap = document.querySelector('.page.active');
       if (!ap) return;
       if (data.deudas && data.deudas.length) deudas = data.deudas;
+      if (data.fijos) { fijosConfig = data.fijos; localStorage.setItem('flujos_fijos', JSON.stringify(fijosConfig)); }
+      if (data.carteras && data.carteras.length) { carterasConfig = data.carteras; localStorage.setItem('flujos_carteras', JSON.stringify(carterasConfig)); rebuildCarteras(); }
       if (ap.id === 'page-dash') renderDashboard();
       else if (ap.id === 'page-list') renderRecords();
       else if (ap.id === 'page-proy') renderDashboardAnalytics();
@@ -2655,8 +2663,13 @@ function syncCarteras() {
         renderConfigPage();
         renderDashboard();
         showToast('Carteras sincronizadas ✓', 'success');
-      } else {
+      }
+      else {
         showToast('No se encontraron carteras', 'error');
+      }
+      if (data.fijos) {
+        fijosConfig = data.fijos;
+        localStorage.setItem('flujos_fijos', JSON.stringify(fijosConfig));
       }
     })
     .catch(() => showToast('Error al sincronizar', 'error'));
@@ -3116,8 +3129,17 @@ let FP_TDCS = [
   { nombre: 'T. INVEX', diaPago: 15, diaCorte: 26 },
   { nombre: 'T. PALACIO', diaPago: 15, diaCorte: 26 }
 ];
-const FP_CATS_ING = ['CARTONOMICO FISCAL','CARTONOMICO NO FISCAL','BONO','SUELDO MENTORIA','OTROS'];
-const FP_CATS_FIJO = ['RENTA','MUCHACHA','EDUCACION'];
+let FP_CATS_ING = ['CARTONOMICO FISCAL','CARTONOMICO NO FISCAL','BONO','SUELDO MENTORIA','OTROS'];
+let FP_CATS_FIJO = ['RENTA','MUCHACHA','EDUCACION']; // fallback: se reconstruye desde la hoja FIJOS
+
+function rebuildFijoCats() {
+  const activos = (fijosConfig || []).filter(x => x && x.activo && x.categoria);
+  const gastos = [...new Set(activos.filter(x => x.tipo === 'GASTO').map(x => x.categoria))];
+  if (gastos.length) FP_CATS_FIJO = gastos;
+  activos.filter(x => x.tipo === 'INGRESO').forEach(x => {
+    if (!FP_CATS_ING.includes(x.categoria)) FP_CATS_ING.push(x.categoria);
+  });
+}
 const FP_CATS_VAR = ['LUZ','AGUA','GAS','GASOLINA RAV4','GASOLINA JAC','CELULAR','COMIDA','SALUD-FARMACIA-CONSULTAS MEDICAS','SUPER','TRANSPORTE','VEHICULO','ROPA Y ACCESORIOS','TINTORERIA Y RENTA VESTUARIO','REGALOS','ESTACIONAMIENTO','VIAJE','COMISIONES-FINANCIEROS','MEJORAS CASA','ENTRETENIMIENTO','BELLEZA Y SPA','PROPINAS','OTROS'];
 const FP_CATS_DEUDA = ['CREDITO AAC','PAGO A DEUDA','MESES SIN INTERESES'];
 
@@ -3241,6 +3263,76 @@ function fpGetRegistrosCash() {
 function fpGetFijosAuto() {
   const mapa = {};
   const year = new Date().getFullYear();
+  const activos = (fijosConfig || []).filter(x => x && x.activo && x.tipo === 'GASTO' && x.monto > 0 && x.categoria);
+  if (!activos.length) return fpGetFijosAutoLegacy(); // sin hoja FIJOS: comportamiento anterior
+  const DIAS_SEM = {'DOMINGO':0,'LUNES':1,'MARTES':2,'MIERCOLES':3,'MIÉRCOLES':3,'JUEVES':4,'VIERNES':5,'SABADO':6,'SÁBADO':6};
+  activos.forEach(fj => {
+    if (fj.frecuencia === 'SEMANAL') {
+      const dow = DIAS_SEM[String(fj.dia).toUpperCase()];
+      if (dow === undefined) return;
+      const d = new Date(year, 0, 1);
+      while (d.getFullYear() === year) {
+        if (d.getDay() === dow) {
+          const sig = new Date(d); sig.setDate(sig.getDate() + 7);
+          const esUltimo = sig.getMonth() !== d.getMonth();
+          const f = fpFecha(d);
+          if (!mapa[f]) mapa[f] = {};
+          const monto = (esUltimo && fj.montoUltimo > 0) ? fj.montoUltimo : fj.monto;
+          mapa[f][fj.categoria] = (mapa[f][fj.categoria] || 0) + monto;
+        }
+        d.setDate(d.getDate() + 1);
+      }
+    } else { // MENSUAL
+      const diaN = parseInt(fj.dia) || 1;
+      for (let m = 0; m < 12; m++) {
+        const ultimoDia = new Date(year, m + 1, 0).getDate();
+        const f = `${year}-${String(m + 1).padStart(2, '0')}-${String(Math.min(diaN, ultimoDia)).padStart(2, '0')}`;
+        if (!mapa[f]) mapa[f] = {};
+        mapa[f][fj.categoria] = (mapa[f][fj.categoria] || 0) + fj.monto;
+      }
+    }
+  });
+  return mapa;
+}
+
+// Ingresos recurrentes desde la hoja FIJOS (tipo INGRESO)
+function fpGetIngresosAuto() {
+  const mapa = {};
+  const year = new Date().getFullYear();
+  const activos = (fijosConfig || []).filter(x => x && x.activo && x.tipo === 'INGRESO' && x.monto > 0 && x.categoria);
+  const DIAS_SEM = {'DOMINGO':0,'LUNES':1,'MARTES':2,'MIERCOLES':3,'MIÉRCOLES':3,'JUEVES':4,'VIERNES':5,'SABADO':6,'SÁBADO':6};
+  activos.forEach(fj => {
+    if (fj.frecuencia === 'SEMANAL') {
+      const dow = DIAS_SEM[String(fj.dia).toUpperCase()];
+      if (dow === undefined) return;
+      const d = new Date(year, 0, 1);
+      while (d.getFullYear() === year) {
+        if (d.getDay() === dow) {
+          const sig = new Date(d); sig.setDate(sig.getDate() + 7);
+          const esUltimo = sig.getMonth() !== d.getMonth();
+          const f = fpFecha(d);
+          if (!mapa[f]) mapa[f] = {};
+          const monto = (esUltimo && fj.montoUltimo > 0) ? fj.montoUltimo : fj.monto;
+          mapa[f][fj.categoria] = (mapa[f][fj.categoria] || 0) + monto;
+        }
+        d.setDate(d.getDate() + 1);
+      }
+    } else {
+      const diaN = parseInt(fj.dia) || 1;
+      for (let m = 0; m < 12; m++) {
+        const ultimoDia = new Date(year, m + 1, 0).getDate();
+        const f = `${year}-${String(m + 1).padStart(2, '0')}-${String(Math.min(diaN, ultimoDia)).padStart(2, '0')}`;
+        if (!mapa[f]) mapa[f] = {};
+        mapa[f][fj.categoria] = (mapa[f][fj.categoria] || 0) + fj.monto;
+      }
+    }
+  });
+  return mapa;
+}
+
+function fpGetFijosAutoLegacy() {
+  const mapa = {};
+  const year = new Date().getFullYear();
 
   // RENTA día 5
   for (let m = 0; m < 12; m++) {
@@ -3313,6 +3405,7 @@ function fpGetTDCProyectados() {
 }
 
 function fpRender() {
+  rebuildFijoCats();
   fpSaldoInicial = fpCalcSaldoInicialAuto();
   const container = document.getElementById('fp-tabla-container');
   if (!container) return;
@@ -3352,6 +3445,7 @@ function fpLabelDia(d) {
 function fpBuildTabla(cols, today, esSemana) {
   const registros = fpGetRegistrosCash();
   const fijosAuto = fpGetFijosAuto();
+  const ingresosAuto = fpGetIngresosAuto();
   const tdcProy = fpGetTDCProyectados();
 
   // Calcular datos por columna
@@ -3366,6 +3460,7 @@ function fpBuildTabla(cols, today, esSemana) {
       const f = fpFecha(d);
       const reg = registros[f] || {};
       const fijos = fijosAuto[f] || {};
+      const ingA = ingresosAuto[f] || {};
       const tdc = tdcProy[f] || {};
       const edits = fpGetEdits(f);
       const esPasado = f <= today;
@@ -3374,7 +3469,7 @@ function fpBuildTabla(cols, today, esSemana) {
         saldo += (reg.neto || 0); // efecto real, idéntico al Resumen
         return;
       } else {
-        FP_CATS_ING.forEach(c => { ing += edits['ing_'+c] || 0; });
+        FP_CATS_ING.forEach(c => { ing += edits['ing_'+c] !== undefined ? edits['ing_'+c] : (ingA[c] || 0); });
         FP_CATS_FIJO.forEach(c => { gas += edits['fijo_'+c] !== undefined ? edits['fijo_'+c] : (fijos[c] || 0); });
         FP_CATS_VAR.forEach(c => { gas += edits['var_'+c] || 0; });
         FP_TDCS.forEach(t => { gas += edits['tdc_'+t.nombre] !== undefined ? edits['tdc_'+t.nombre] : (tdc[t.nombre] || 0); });
@@ -3399,6 +3494,7 @@ function fpBuildTabla(cols, today, esSemana) {
     fechas.forEach(f => {
       const reg = registros[f] || {};
       const fijos = fijosAuto[f] || {};
+      const ingA = ingresosAuto[f] || {};
       const tdc = tdcProy[f] || {};
       const edits = fpGetEdits(f);
       const esPasado = f <= today;
@@ -3413,7 +3509,7 @@ function fpBuildTabla(cols, today, esSemana) {
         FP_CATS_DEUDA.forEach(c => { if (reg.gas?.[c]) gasDeudaPorCat[c] = (gasDeudaPorCat[c]||0) + reg.gas[c]; });
         netoPasado += (reg.neto || 0); // el saldo del pasado usa el efecto real
       } else {
-        FP_CATS_ING.forEach(c => { const v = edits['ing_'+c]||0; if(v){ ingPorCat[c]=(ingPorCat[c]||0)+v; futIng += v; } });
+        FP_CATS_ING.forEach(c => { const v = edits['ing_'+c] !== undefined ? edits['ing_'+c] : (ingA[c] || 0); if(v){ ingPorCat[c]=(ingPorCat[c]||0)+v; futIng += v; } });
         FP_CATS_FIJO.forEach(c => { const v = edits['fijo_'+c]!==undefined ? edits['fijo_'+c] : (fijos[c]||0); if(v){ gasFijoPorCat[c]=(gasFijoPorCat[c]||0)+v; futGas += v; } });
         FP_CATS_VAR.forEach(c => { const v = edits['var_'+c]||0; if(v){ gasVarPorCat[c]=(gasVarPorCat[c]||0)+v; futGas += v; } });
         FP_TDCS.forEach(t => { const v = edits['tdc_'+t.nombre]!==undefined ? edits['tdc_'+t.nombre] : (tdc[t.nombre]||0); if(v){ gasTDCPorCat[t.nombre]=(gasTDCPorCat[t.nombre]||0)+v; futGas += v; } });
