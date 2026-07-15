@@ -3414,9 +3414,11 @@ function fpGetTDCProyectados() {
       const dia = fecha.getDate();
       const mesGasto = fecha.getMonth() + 1; // 1-12
       const anoGasto = fecha.getFullYear();
-      // Si dia <= diaCorte: cierra este mes → pago el mes siguiente
-      // Si dia > diaCorte: cierra el mes siguiente → pago en dos meses
-      let mesPago = mesGasto + (dia > tdc.diaCorte ? 2 : 1);
+      // Mes del corte: este mes si dia <= corte; el siguiente si dia > corte
+      const mesCorte = mesGasto + (dia > tdc.diaCorte ? 1 : 0);
+      // Mes de pago: el mismo mes del corte si el día de pago va después del corte
+      // (ej. T. BBVA corta 6 y paga 26); si no, el mes siguiente (ej. T. COSTCO corta 24 y paga 14)
+      let mesPago = mesCorte + (tdc.diaPago > tdc.diaCorte ? 0 : 1);
       let anoPago = anoGasto;
       while (mesPago > 12) { mesPago -= 12; anoPago++; }
       const key = `${anoPago}-${String(mesPago).padStart(2,'0')}`;
@@ -3448,7 +3450,7 @@ function fpGetTDCProyectados() {
       let mesC = today.getMonth() + 1; // 1-12
       if (today.getDate() > tdc.diaCorte) { mesC++; if (mesC > 12) { mesC = 1; anoC++; } }
       for (let k = 0; k < restantes && k < 24; k++) {
-        let mesPago = mesC + 1, anoPago = anoC;
+        let mesPago = mesC + (tdc.diaPago > tdc.diaCorte ? 0 : 1), anoPago = anoC;
         if (mesPago > 12) { mesPago -= 12; anoPago++; }
         const key = `${anoPago}-${String(mesPago).padStart(2, '0')}`;
         gastosPorPeriodo[key] = (gastosPorPeriodo[key] || 0) + mensualidad;
