@@ -3401,39 +3401,36 @@ function fpTdcRowNames() {
 
 function fpGetTDCProyectados() {
   const pagos = {};
+  window._fpTdcDetalle = {};
   const today = new Date(); today.setHours(0,0,0,0);
-  const year = today.getFullYear();
+  const todayStr = fpFecha(today);
+  const manana = new Date(today); manana.setDate(manana.getDate() + 1);
+  const mananaStr = fpFecha(manana);
+
   FP_TDCS.forEach(tdc => {
+    // ── 1) Cargos por periodo: GASTO suma, INGRESO (devolución) resta ──
     const gastosPorPeriodo = {};
     allRecords.forEach(r => {
       if (r.cartera !== tdc.nombre) return;
-      if (r.tipo !== 'GASTO') return;
+      if (r.tipo !== 'GASTO' && r.tipo !== 'INGRESO') return;
       const fechaStr = (r.fecha || r['FECHA OPERACIÓN'] || r['FECHA OPERACION'] || '').substring(0,10);
       const fecha = new Date(fechaStr + 'T12:00:00');
       if (isNaN(fecha)) return;
       const dia = fecha.getDate();
-      const mesGasto = fecha.getMonth() + 1; // 1-12
+      const mesGasto = fecha.getMonth() + 1;
       const anoGasto = fecha.getFullYear();
       // Mes del corte: este mes si dia <= corte; el siguiente si dia > corte
       const mesCorte = mesGasto + (dia > tdc.diaCorte ? 1 : 0);
-      // Mes de pago: el mismo mes del corte si el día de pago va después del corte
-      // (ej. T. BBVA corta 6 y paga 26); si no, el mes siguiente (ej. T. COSTCO corta 24 y paga 14)
+      // Mes de pago: mismo mes del corte si el día de pago va después del corte
       let mesPago = mesCorte + (tdc.diaPago > tdc.diaCorte ? 0 : 1);
       let anoPago = anoGasto;
       while (mesPago > 12) { mesPago -= 12; anoPago++; }
       const key = `${anoPago}-${String(mesPago).padStart(2,'0')}`;
-      gastosPorPeriodo[key] = (gastosPorPeriodo[key] || 0) + Math.abs(parseFloat(r.monto) || 0);
+      const m = Math.abs(parseFloat(r.monto) || 0);
+      gastosPorPeriodo[key] = (gastosPorPeriodo[key] || 0) + (r.tipo === 'GASTO' ? m : -m);
     });
-    // Pagos reales ya hechos a esta tarjeta (TRANSFERENCIA cash → tarjeta)
-    const pagosReales = [];
-    allRecords.forEach(r => {
-      if (r.tipo !== 'TRANSFERENCIA') return;
-      if ((r.carteraDestino || '') !== tdc.nombre) return;
-      if (!FP_CARTERAS_CASH.includes(r.cartera)) return;
-      const f = String(r.fecha || '').substring(0, 10);
-      if (f) pagosReales.push({ fecha: f, monto: Math.abs(parseFloat(r.monto) || 0) });
-    });
-    // MSI de la hoja DEUDAS: mensualidades restantes cargadas a esta tarjeta
+
+    // ── 2) MSI de la hoja DEUDAS: mensualidades restantes en cortes futuros ──
     (deudas || []).forEach(dd => {
       if (!dd.activa) return;
       if ((dd.carteraPago || '') !== tdc.nombre) return;
@@ -3445,9 +3442,8 @@ function fpGetTDCProyectados() {
       const transcurridos = Math.max(0, (today.getFullYear() - ini.getFullYear()) * 12 + (today.getMonth() - ini.getMonth()));
       const restantes = plazo - transcurridos;
       if (restantes <= 0) return;
-      // Cada mensualidad restante cae en los próximos cortes que aún no ocurren
       let anoC = today.getFullYear();
-      let mesC = today.getMonth() + 1; // 1-12
+      let mesC = today.getMonth() + 1;
       if (today.getDate() > tdc.diaCorte) { mesC++; if (mesC > 12) { mesC = 1; anoC++; } }
       for (let k = 0; k < restantes && k < 24; k++) {
         let mesPago = mesC + (tdc.diaPago > tdc.diaCorte ? 0 : 1), anoPago = anoC;
@@ -3458,39 +3454,71 @@ function fpGetTDCProyectados() {
       }
     });
 
-    const manana = new Date(today); manana.setDate(manana.getDate() + 1);
-    const mananaStr = fpFecha(manana);
-    let vencidoTotal = 0, primerVencido = null;
-    Object.entries(gastosPorPeriodo).forEach(([key, monto]) => {
+    // ── 3) Lista de periodos ordenados del más viejo al más nuevo ──
+    const periodos = Object.entries(gastosPorPeriodo).map(([key, monto]) => {
       const [ano, mes] = key.split('-').map(Number);
       const maxDia = new Date(ano, mes, 0).getDate();
       const diaPago = Math.min(tdc.diaPago, maxDia);
-      const fechaPago = `${ano}-${String(mes).padStart(2,'0')}-${String(diaPago).padStart(2,'0')}`;
-      const fPago = new Date(fechaPago + 'T12:00:00');
-      if (fPago <= today) {
-        // Periodo con fecha de pago ya pasada: ver cuánto se pagó en realidad
-        vencidoTotal += monto;
-        if (!primerVencido || fechaPago < primerVencido) primerVencido = fechaPago;
-      } else {
-        if (!pagos[fechaPago]) pagos[fechaPago] = {};
-        pagos[fechaPago][tdc.nombre] = (pagos[fechaPago][tdc.nombre] || 0) + monto;
+      return {
+        periodo: key,
+        fechaPago: `${ano}-${String(mes).padStart(2,'0')}-${String(diaPago).padStart(2,'0')}`,
+        cargos: Math.round(monto * 100) / 100,
+        pagado: 0,
+        restante: monto
+      };
+    }).filter(p => p.restante > 0.01).sort((a, b) => a.fechaPago.localeCompare(b.fechaPago));
+
+    // ── 4) Pagos reales (TRANSFERENCIA cash → tarjeta), aplicados al periodo más viejo primero ──
+    const pagosReales = [];
+    allRecords.forEach(r => {
+      if (r.tipo !== 'TRANSFERENCIA') return;
+      if ((r.carteraDestino || '') !== tdc.nombre) return;
+      if (!FP_CARTERAS_CASH.includes(r.cartera)) return;
+      const f = String(r.fecha || '').substring(0, 10);
+      if (f && f <= todayStr) pagosReales.push({ fecha: f, monto: Math.abs(parseFloat(r.monto) || 0) });
+    });
+    pagosReales.sort((a, b) => a.fecha.localeCompare(b.fecha));
+    pagosReales.forEach(p => {
+      let resto = p.monto;
+      for (const per of periodos) {
+        if (resto <= 0) break;
+        if (per.restante <= 0) continue;
+        const aplica = Math.min(per.restante, resto);
+        per.restante -= aplica;
+        per.pagado += aplica;
+        resto -= aplica;
       }
     });
-    if (vencidoTotal > 0 && primerVencido) {
-      // Restar los pagos reales desde 15 días antes del primer pago vencido
-      const desde = new Date(primerVencido + 'T12:00:00'); desde.setDate(desde.getDate() - 15);
-      const desdeStr = fpFecha(desde);
-      let pagado = 0;
-      pagosReales.forEach(p => { if (p.fecha >= desdeStr) pagado += p.monto; });
-      const residual = vencidoTotal - pagado;
-      if (residual > 1) {
-        // Pago pendiente (vencido): se muestra mañana hasta que se registre el pago real
+
+    // ── 5) Colocar lo pendiente: futuro en su fecha exacta, vencido mañana ──
+    periodos.forEach(per => {
+      per.restante = Math.round(per.restante * 100) / 100;
+      if (per.restante <= 1) { per.estado = 'PAGADO'; return; }
+      if (per.fechaPago > todayStr) {
+        per.estado = 'FUTURO';
+        if (!pagos[per.fechaPago]) pagos[per.fechaPago] = {};
+        pagos[per.fechaPago][tdc.nombre] = (pagos[per.fechaPago][tdc.nombre] || 0) + per.restante;
+      } else {
+        per.estado = 'VENCIDO → se muestra mañana';
         if (!pagos[mananaStr]) pagos[mananaStr] = {};
-        pagos[mananaStr][tdc.nombre] = (pagos[mananaStr][tdc.nombre] || 0) + residual;
+        pagos[mananaStr][tdc.nombre] = (pagos[mananaStr][tdc.nombre] || 0) + per.restante;
       }
-    }
+    });
+
+    window._fpTdcDetalle[tdc.nombre] = { periodos, pagosReales };
   });
   return pagos;
+}
+
+// 🔍 Herramienta de auditoría: escribe fpDebugTDC('T. BBVA') en la consola
+function fpDebugTDC(nombre) {
+  fpGetTDCProyectados();
+  const det = window._fpTdcDetalle[nombre];
+  if (!det) { console.log('Tarjeta no encontrada. Opciones:', Object.keys(window._fpTdcDetalle)); return; }
+  console.log(`═══ ${nombre} — periodos (cargos del periodo / pagado / pendiente) ═══`);
+  console.table(det.periodos.map(p => ({ 'Fecha de pago': p.fechaPago, 'Cargos': p.cargos, 'Pagado': Math.round(p.pagado*100)/100, 'Pendiente': p.restante, 'Estado': p.estado })));
+  console.log(`═══ ${nombre} — pagos reales registrados (transferencias) ═══`);
+  console.table(det.pagosReales);
 }
 
 function fpRender() {
