@@ -2204,7 +2204,7 @@ function renderDonutGas(recs) {
   const bycat = {};
   recs.forEach(r => {
     const m = parseFloat(r.monto) || 0;
-    if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.categoria) bycat[r.categoria] = (bycat[r.categoria] || 0) + Math.abs(m);
+    if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.tipo !== 'SALIDA EXTERNA' && r.tipo !== 'ENTRADA EXTERNA' && r.categoria) bycat[r.categoria] = (bycat[r.categoria] || 0) + Math.abs(m);
   });
   const sorted = Object.entries(bycat).sort((a,b) => b[1]-a[1]).slice(0, 8);
   const ctx = document.getElementById('an-donut-gas'); if (!ctx) return;
@@ -2226,7 +2226,7 @@ function renderDonutIng(recs) {
   const bycat = {};
   recs.forEach(r => {
     const m = parseFloat(r.monto) || 0;
-    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA' && r.categoria) bycat[r.categoria] = (bycat[r.categoria] || 0) + m;
+    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA' && r.tipo !== 'SALIDA EXTERNA' && r.tipo !== 'ENTRADA EXTERNA' && r.categoria) bycat[r.categoria] = (bycat[r.categoria] || 0) + m;
   });
   const sorted = Object.entries(bycat).sort((a,b) => b[1]-a[1]).slice(0, 8);
   const ctx = document.getElementById('an-donut-ing'); if (!ctx) return;
@@ -2248,7 +2248,7 @@ function renderTablaGas(recs) {
   const bycat = {};
   recs.forEach(r => {
     const m = parseFloat(r.monto) || 0;
-    if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.categoria) bycat[r.categoria] = (bycat[r.categoria] || 0) + Math.abs(m);
+    if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.tipo !== 'SALIDA EXTERNA' && r.tipo !== 'ENTRADA EXTERNA' && r.categoria) bycat[r.categoria] = (bycat[r.categoria] || 0) + Math.abs(m);
   });
   const sorted = Object.entries(bycat).sort((a,b) => b[1]-a[1]);
   const el = document.getElementById('an-tabla-gas'); if (!el) return;
@@ -2264,7 +2264,7 @@ function renderTablaIng(recs) {
   const bycat = {};
   recs.forEach(r => {
     const m = parseFloat(r.monto) || 0;
-    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA' && r.categoria) bycat[r.categoria] = (bycat[r.categoria] || 0) + m;
+    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA' && r.tipo !== 'SALIDA EXTERNA' && r.tipo !== 'ENTRADA EXTERNA' && r.categoria) bycat[r.categoria] = (bycat[r.categoria] || 0) + m;
   });
   const sorted = Object.entries(bycat).sort((a,b) => b[1]-a[1]);
   const el = document.getElementById('an-tabla-ing'); if (!el) return;
@@ -2281,7 +2281,7 @@ function renderPresupuestoChart(recs) {
   const gasReal = {};
   recs.forEach(r => {
     const m = parseFloat(r.monto) || 0;
-    if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.categoria) gasReal[r.categoria] = (gasReal[r.categoria] || 0) + Math.abs(m);
+    if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.tipo !== 'SALIDA EXTERNA' && r.tipo !== 'ENTRADA EXTERNA' && r.categoria) gasReal[r.categoria] = (gasReal[r.categoria] || 0) + Math.abs(m);
   });
   const cats = metasConfig.filter(x => Math.abs(x.presupuesto) > 0).map(x => ({
     cat: x.categoria, presup: Math.abs(x.presupuesto), real: gasReal[x.categoria] || 0
@@ -2441,10 +2441,10 @@ function buildContextoFinanciero() {
     const p = r.fecha ? r.fecha.split('-') : [];
     if (parseInt(p[0]) !== anioActual) return;
     const m = parseFloat(r.monto) || 0;
-    if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.categoria) {
+    if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.tipo !== 'SALIDA EXTERNA' && r.tipo !== 'ENTRADA EXTERNA' && r.categoria) {
       gastosPorCatAnio[r.categoria] = (gastosPorCatAnio[r.categoria] || 0) + Math.abs(m);
     }
-    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA' && r.categoria) {
+    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA' && r.tipo !== 'SALIDA EXTERNA' && r.tipo !== 'ENTRADA EXTERNA' && r.categoria) {
       ingresosPorCatAnio[r.categoria] = (ingresosPorCatAnio[r.categoria] || 0) + m;
     }
   });
@@ -2456,10 +2456,10 @@ function buildContextoFinanciero() {
     if (parseInt(p[0]) !== anioActual || parseInt(p[1]) - 1 !== mesActual) return;
     if (r.fecha > today) return;
     const m = parseFloat(r.monto) || 0;
-    if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.categoria) {
+    if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.tipo !== 'SALIDA EXTERNA' && r.tipo !== 'ENTRADA EXTERNA' && r.categoria) {
       gastosPorCatMes[r.categoria] = (gastosPorCatMes[r.categoria] || 0) + Math.abs(m);
     }
-    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA' && r.categoria) {
+    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA' && r.tipo !== 'SALIDA EXTERNA' && r.tipo !== 'ENTRADA EXTERNA' && r.categoria) {
       ingresosPorCatMes[r.categoria] = (ingresosPorCatMes[r.categoria] || 0) + m;
     }
   });
@@ -2486,8 +2486,8 @@ function buildContextoFinanciero() {
   allRecords.forEach(r => {
     if (r.fecha > today) return;
     const m = parseFloat(r.monto) || 0;
-    if (m < 0 && r.tipo !== 'TRANSFERENCIA') totalGastadoHoy += Math.abs(m);
-    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA') totalIngresadoHoy += m;
+    if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.tipo !== 'SALIDA EXTERNA' && r.tipo !== 'ENTRADA EXTERNA') totalGastadoHoy += Math.abs(m);
+    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA' && r.tipo !== 'SALIDA EXTERNA' && r.tipo !== 'ENTRADA EXTERNA') totalIngresadoHoy += m;
   });
 
   return `=== INFORMACIÓN GENERAL ===
